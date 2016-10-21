@@ -67,7 +67,7 @@ class Client ():
         #todo os.system('cls' if os.name == 'nt' else 'clear')
 
     def write(self, value):
-        timestamp = self.read()
+        timestamp = self.readTimestamp()
         timestamp = self.incrementTimestamp(timestamp)
 
         data_signature = Signature.signData(Signature.getPrivateKey(-1,self.ID), value+str(timestamp))
@@ -114,15 +114,50 @@ class Client ():
                     data.showInfo()
                     print ("Timestamp: " + str(timestamp))
 
-                return timestamp #todo criar request que pega apenas o timestamp(nao precisa do timestamp)
             else:
                 with self.LOCK_PRINT:
-                    print ("EERO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.")
+                    print ("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.")
 
         else:
             with self.LOCK_PRINT:
                 print ("Nao foi possivel ler nenhum dado. Timeout da conexao expirado")
 
+
+    def readTimestamp(self):
+        with self.LOCK:
+            self.RESPONSES = []
+            self.OUT_DATED_SERVERS = []
+
+        with self.LOCK_PRINT:
+            print("Lendo timestamp dos servidores....")
+        for port in self.PORTS:
+            server = (self.HOST, port)
+            threading.Thread(target=self.readTimestampFromServer, args=(server, self.REQUEST_CODE)).start()
+
+        wasReleased = self.SEMAPHORE.acquire(True, Define.timeout)
+
+        if wasReleased:
+            with self.LOCK:
+                self.REQUEST_CODE = self.REQUEST_CODE + 1
+
+            if (len(self.RESPONSES) >= self.quorum):
+                timestamp = self.analyseTimestampResponse(self.RESPONSES)
+
+                with self.LOCK_PRINT:
+                    print('Li o dado do server:')
+                    print("Timestamp: " + str(timestamp))
+
+                    return timestamp
+
+            else:
+                with self.LOCK_PRINT:
+                    print("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.")
+                return -1
+
+        else:
+            with self.LOCK_PRINT:
+                print("Nao foi possivel ler nenhum dado. Timeout da conexao expirado")
+            return -1
 
     def writeOnServer(self, server, value, timestamp, data_signature, client_id, request_code):
             request = dict(type=Define.write, timestamp=timestamp, variable=value, request_code = request_code, client_id = client_id, data_signature = data_signature)
@@ -174,6 +209,35 @@ class Client ():
                 print("Response atrasada.")
 
 
+    def readTimestampFromServer(self, server, request_code):
+        messageFromServer = self.getTimestampFromServer(server, request_code)
+
+        if messageFromServer[Define.status] == Define.success and messageFromServer[Define.request_code] == self.REQUEST_CODE:
+            data = messageFromServer[Define.data]
+            serverTimestamp = data[Define.timestamp]
+
+            with self.LOCK:
+                if len(self.RESPONSES) < self.quorum-1:
+                    self.RESPONSES.append((serverTimestamp, server))
+
+                elif len(self.RESPONSES) == self.quorum-1:
+                    self.RESPONSES.append((serverTimestamp, server))
+                    self.SEMAPHORE.release()
+
+                else:
+                    #do nothing
+                    with self.LOCK_PRINT:
+                        print("Quorum ja encheu. Jogando request fora...")
+
+        elif messageFromServer[Define.status] == Define.error:
+            with self.LOCK_PRINT:
+                print("Ocorreu algum erro na request")
+
+        elif messageFromServer[Define.request_code] != self.REQUEST_CODE:
+            with self.LOCK_PRINT:
+                print("Response atrasada.")
+
+
     def getValueFromServer(self, server, request_code):
         request = dict(type=Define.read, request_code =request_code, client_id = self.ID)
         requestJSON = json.dumps(request)
@@ -184,6 +248,19 @@ class Client ():
         messageFromServerJSON, server = TCPSocket.recvfrom(2048)
 
         return json.loads(messageFromServerJSON.decode('utf-8'))
+
+
+    def getTimestampFromServer(self, server, request_code):
+        request = dict(type=Define.read_timestamp, request_code=request_code, client_id=self.ID)
+        requestJSON = json.dumps(request)
+        TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        TCPSocket.connect(server)
+        TCPSocket.send(requestJSON.encode('utf-8'))
+
+        messageFromServerJSON, server = TCPSocket.recvfrom(2048)
+
+        return json.loads(messageFromServerJSON.decode('utf-8'))
+
 
     def terminate(self):
         self.exit = True
@@ -223,6 +300,23 @@ class Client ():
                 self.OUT_DATED_SERVERS.append(server)
 
         return (value, timestamp, data_signature, client_id)
+
+    def analyseTimestampResponse(self, response):
+        timestamp = -1
+        repeatTimes = 0
+
+        for (rTimestamp) in response:
+            if (rTimestamp == timestamp):
+                repeatTimes = repeatTimes + 1
+
+            elif (rTimestamp > timestamp):
+                timestamp = rTimestamp
+                repeatTimes = 1
+
+            else:
+                pass
+
+        return timestamp
 
     # transfere os objetos de um array para outro
     def transferObjects(self, oldArray, newArray):
