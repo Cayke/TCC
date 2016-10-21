@@ -16,7 +16,7 @@ class Client ():
 
     LOCK = threading.Lock()
     REQUEST_CODE = 0
-    RESPONSES = [] # armazena tuplas (value, timestamp, server)
+    RESPONSES = [] # armazena tuplas (value, timestamp, data_signature, client_id, server)
     OUT_DATED_SERVERS = []
 
 
@@ -104,10 +104,9 @@ class Client ():
                 self.REQUEST_CODE = self.REQUEST_CODE + 1
 
             if (len(self.RESPONSES) >= self.quorum):
-                value, timestamp, _ = self.analyseResponse(self.RESPONSES)
+                value, timestamp, data_signature, client_id = self.analyseResponse(self.RESPONSES)
 
-                #todo mandar os outros parametros (mandar a assinatura e o ID de quem escreveu)
-                self.writeBack(value, timestamp, None, None)
+                self.writeBack(value, timestamp, data_signature, client_id)
 
                 data = RepresentedData(value)
                 with self.LOCK_PRINT:
@@ -150,13 +149,15 @@ class Client ():
             data = messageFromServer[Define.data]
             serverTimestamp = data[Define.timestamp]
             serverVariable = data[Define.variable]
+            dataSignature = data[Define.data_signature]
+            clientID = data[Define.client_id]
 
             with self.LOCK:
                 if len(self.RESPONSES) < self.quorum-1:
-                    self.RESPONSES.append((serverVariable, serverTimestamp, server))
+                    self.RESPONSES.append((serverVariable, serverTimestamp, dataSignature, clientID, server))
 
                 elif len(self.RESPONSES) == self.quorum-1:
-                    self.RESPONSES.append((serverVariable, serverTimestamp, server))
+                    self.RESPONSES.append((serverVariable, serverTimestamp, dataSignature, clientID, server))
                     self.SEMAPHORE.release()
 
                 else:
@@ -171,7 +172,6 @@ class Client ():
         elif messageFromServer[Define.request_code] != self.REQUEST_CODE:
             with self.LOCK_PRINT:
                 print("Response atrasada.")
-
 
 
     def getValueFromServer(self, server, request_code):
@@ -191,30 +191,38 @@ class Client ():
     def incrementTimestamp(self, serverTimestamp):
         return serverTimestamp+1
 
-    # retorna uma tupla com o dado mais atual e sua quantidade de repeticoes para o quorum atual (value, timestamp, repeatTimes)
+    # retorna uma tupla com o dado mais atual e sua quantidade de repeticoes para o quorum atual (value, timestamp)
     def analyseResponse(self, response):
-        # todo avaliar a assinatura
         value = ''
         timestamp = -1
         repeatTimes = 0
         auxServers = []
+        data_signature = ''
+        client_id = -1
 
-        for (rValue, rTimestamp, server) in  response:
-            if (rTimestamp == timestamp):
-                repeatTimes = repeatTimes + 1
-                auxServers.append(server)
+        for (rValue, rTimestamp, data_sign, r_client_id, server) in response:
+            if Signature.verify_sign(Signature.getPublicKey(-1, r_client_id), data_sign, rValue + str(rTimestamp)):
+                if (rTimestamp == timestamp):
+                    repeatTimes = repeatTimes + 1
+                    auxServers.append(server)
 
-            elif (rTimestamp > timestamp):
-                timestamp = rTimestamp
-                repeatTimes = 1
-                value = rValue
-                self.transferObjects(auxServers, self.OUT_DATED_SERVERS)
-                auxServers.append(server)
+                elif (rTimestamp > timestamp):
+                    timestamp = rTimestamp
+                    repeatTimes = 1
+                    value = rValue
+                    data_signature = data_sign
+                    client_id = r_client_id
+                    self.transferObjects(auxServers, self.OUT_DATED_SERVERS)
+                    auxServers.append(server)
+
+                else:
+                    self.OUT_DATED_SERVERS.append(server)
 
             else:
+                # assinatura invalida
                 self.OUT_DATED_SERVERS.append(server)
 
-        return (value, timestamp, repeatTimes)
+        return (value, timestamp, data_signature, client_id)
 
     # transfere os objetos de um array para outro
     def transferObjects(self, oldArray, newArray):

@@ -40,4 +40,3 @@ data = 'data'
 #   DIGITAL SIGN
 #   OBS: AS ASSINATURAS SAO EM BASE64 (para diminuir o tamanho)
 #   É assinado o Value+str(timestamp) -> data_sign
-#   É assinado tambem apenas o timestamp -> time_sign

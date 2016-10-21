@@ -85,29 +85,18 @@ class Server(object):
         self.LOCK.acquire()
         if timestamp > self.TIMESTAMP:
 
-            if Signature.verify_sign(Signature.getPublicKey(-1, client_id), signature, variable+str(timestamp)):
-                print("Recebido variable = " + variable + " e timestamp " + str(timestamp))
+            print("Recebido variable = " + variable + " e timestamp " + str(timestamp))
 
-                self.DATA = variable
-                self.TIMESTAMP = timestamp
-                self.DATA_SIGNATURE = signature
-                self.CLIENT_ID = client_id
+            self.DATA = variable
+            self.TIMESTAMP = timestamp
+            self.DATA_SIGNATURE = signature
+            self.CLIENT_ID = client_id
 
-                response = dict(serverID = Define.plataform, status = Define.success, msg = Define.variable_updated, request_code = request[Define.request_code])
-                responseJSON = json.dumps(response)
-                self.LOCK.release()
+            response = dict(serverID = Define.plataform, status = Define.success, msg = Define.variable_updated, request_code = request[Define.request_code])
+            responseJSON = json.dumps(response)
+            self.LOCK.release()
 
-                socketTCP.send(responseJSON.encode('utf-8'))
-
-            else:
-                print("Recebido dado com assinatura invalida.")
-
-                response = dict(serverID=Define.plataform, status=Define.error, msg=Define.invalid_signature,
-                request_code=request[Define.request_code])
-                responseJSON = json.dumps(response)
-                self.LOCK.release()
-
-                socketTCP.send(responseJSON.encode('utf-8'))
+            socketTCP.send(responseJSON.encode('utf-8'))
 
         else:
             self.LOCK.release()
@@ -118,7 +107,7 @@ class Server(object):
 
     def read(self, request, socketTCP, client):
         with self.LOCK:
-            dataDict = dict(variable = self.DATA, timestamp = self.TIMESTAMP)
+            dataDict = dict(variable = self.DATA, timestamp = self.TIMESTAMP, data_signature = self.DATA_SIGNATURE, client_id = self.CLIENT_ID)
             response = dict(serverID = Define.plataform, status = Define.success, msg = Define.read, data = dataDict, request_code = request[Define.request_code])
             responseJSON = json.dumps(response)
 
