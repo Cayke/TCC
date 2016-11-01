@@ -267,10 +267,10 @@ class Client ():
 
             with self.LOCK:
                 if len(self.RESPONSES) < self.QUORUM-1:
-                    self.RESPONSES.append((serverTimestamp, server))
+                    self.RESPONSES.append(serverTimestamp)
 
                 elif len(self.RESPONSES) == self.QUORUM-1:
-                    self.RESPONSES.append((serverTimestamp, server))
+                    self.RESPONSES.append(serverTimestamp)
                     self.SEMAPHORE.release()
 
                 else:
@@ -389,7 +389,7 @@ class Client ():
         timestamp = -1
         repeatTimes = 0
 
-        for (rTimestamp) in responses:
+        for rTimestamp in responses:
             if (rTimestamp == timestamp):
                 repeatTimes = repeatTimes + 1
 
