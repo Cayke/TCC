@@ -1,14 +1,17 @@
 # plataform description
 plataform = "python"
-ip = 'localhost'
-port = 5000
 
 timeout = 5
-#   request
-#   {client_id: int, request_code: int, type: 'read'} or
-#   {client_id: int, request_code: int, type: 'write', variable: number, timestamp: number, data_sign: signature}
-#   {client_id: int, request_code: int, type: 'bye'}
 
+
+'''
+    REQUEST (client sends to server)
+
+    READ - {type: 'read', request_code: int}
+    READ TIMESTAMP - {type: 'read_timestamp', request_code: int}
+    WRITE - {type: 'write', request_code: int, client_id: int, variable: dict, timestamp: int, data_signature: string}
+    CLOSE SOCKET - {type: 'bye'}
+'''
 type = 'type'
 read = 'read'
 read_timestamp = 'read_timestamp'
@@ -20,23 +23,27 @@ client_id = 'client_id'
 bye = 'bye'
 request_code = 'request_code'
 
-#   response
-#   {request_code: int, serverID: 'string', status: 'string', msg = 'string', data = dictionary or array}
-serverID = 'serverID'
+
+'''
+    RESPONSE (server sends to client)
+    BASIC STRUCTURE - {server_id: int, plataform: string, request_code: int, status: string, msg = string, data = dictionary or array}
+'''
+server_id = 'server_id'
+server_plataform = 'plataform'
 status = 'status'
 success = 'success'
 error = 'error'
 msg = 'msg'
+data = 'data'
+variable_updated = 'variable_updated'
+#errors
 undefined_type = 'undefined_type'
 unknown_error = 'unknown_error'
-variable_updated = 'variable_updated'
 outdated_timestamp = 'outdated_timestamp'
 invalid_signature = 'invalid_signature'
-data = 'data'
 
-
-
-
-#   DIGITAL SIGN
-#   OBS: AS ASSINATURAS SAO EM BASE64 (para diminuir o tamanho)
-#   É assinado o Value+str(timestamp) -> data_sign
+'''
+    DIGITAL SIGN
+    OBS: The signature is in BASE64 format (to reduce the size)
+    It is signed: Varaible+str(timestamp) -> data_signature
+'''
