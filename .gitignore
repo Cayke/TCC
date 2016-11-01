@@ -1,16 +1,11 @@
-python_honest_writers/client.pyc
-python_honest_writers/Define-MacBook Pro de Cayke.pyc
-python_honest_writers/Define.pyc
-python_honest_writers/server.pyc
-python_honest_writers/.idea/.name
-python_honest_writers/.idea/encodings.xml
-python_honest_writers/.idea/misc.xml
-python_honest_writers/.idea/modules.xml
-python_honest_writers/.idea/python.iml
-python_honest_writers/.idea/vcs.xml
-python_honest_writers/.idea/workspace.xml
-python_honest_writers/__pycache__/client.cpython-35.pyc
-python_honest_writers/__pycache__/Define.cpython-35.pyc
-python_honest_writers/__pycache__/representedData.cpython-35.pyc
-python_honest_writers/__pycache__/server.cpython-35.pyc
-python_honest_writers/__pycache__/signature.cpython-35.pyc
+python/.idea/encodings.xml
+python/.idea/misc.xml
+python/.idea/modules.xml
+python/.idea/python.iml
+python/.idea/vcs.xml
+python/.idea/workspace.xml
+python/__pycache__/client.cpython-35.pyc
+python/__pycache__/Define.cpython-35.pyc
+python/__pycache__/representedData.cpython-35.pyc
+python/__pycache__/server.cpython-35.pyc
+python/__pycache__/signature.cpython-35.pyc
