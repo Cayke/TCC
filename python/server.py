@@ -41,7 +41,7 @@ class Server(object):
 
         while True:
             con, client = socketTCP.accept()
-            threading.Thread(target=self.clientConnected, args=con).start()
+            threading.Thread(target=self.clientConnected, args=[con]).start()
 
         socketTCP.close()
 
