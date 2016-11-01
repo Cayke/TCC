@@ -183,7 +183,8 @@ class Client ():
     '''
     def writeBack(self, value, timestamp, data_signature, client_id):
         for server in self.OUT_DATED_SERVERS:
-            threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, data_signature, client_id, self.REQUEST_CODE)).start()
+            if timestamp != -1 and client_id != -1:
+                threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, data_signature, client_id, self.REQUEST_CODE)).start()
 
         self.REQUEST_CODE = self.REQUEST_CODE + 1
 
@@ -350,26 +351,31 @@ class Client ():
         client_id = -1
 
         for (rValue, rTimestamp, data_sign, r_client_id, server) in responses:
-            if Signature.verifySign(Signature.getPublicKey(-1, r_client_id), data_sign, rValue + str(rTimestamp)):
-                if (rTimestamp == timestamp):
-                    repeatTimes = repeatTimes + 1
-                    auxServers.append(server)
-
-                elif (rTimestamp > timestamp):
-                    timestamp = rTimestamp
-                    repeatTimes = 1
-                    value = rValue
-                    data_signature = data_sign
-                    client_id = r_client_id
-                    self.transferObjects(auxServers, self.OUT_DATED_SERVERS)
-                    auxServers.append(server)
-
-                else:
-                    self.OUT_DATED_SERVERS.append(server)
+            if rTimestamp == -1 or r_client_id == -1:
+                #nao ha dado escrito no servidor
+                self.OUT_DATED_SERVERS.append(server)
 
             else:
-                # assinatura invalida
-                self.OUT_DATED_SERVERS.append(server)
+                if Signature.verifySign(Signature.getPublicKey(-1, r_client_id), data_sign, rValue + str(rTimestamp)):
+                    if (rTimestamp == timestamp):
+                        repeatTimes = repeatTimes + 1
+                        auxServers.append(server)
+
+                    elif (rTimestamp > timestamp):
+                        timestamp = rTimestamp
+                        repeatTimes = 1
+                        value = rValue
+                        data_signature = data_sign
+                        client_id = r_client_id
+                        self.transferObjects(auxServers, self.OUT_DATED_SERVERS)
+                        auxServers.append(server)
+
+                    else:
+                        self.OUT_DATED_SERVERS.append(server)
+
+                else:
+                    # assinatura invalida
+                    self.OUT_DATED_SERVERS.append(server)
 
         return (value, timestamp, data_signature, client_id)
 
