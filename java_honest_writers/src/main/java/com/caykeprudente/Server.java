@@ -9,14 +9,14 @@ import java.net.Socket;
  */
 public class Server
 {
-    private String host = "";
-    private int port = -1;
-    private int id = -1;
+    public String host = "";
+    public int port = -1;
+    public int id = -1;
 
-    private String variable = "";
-    private int timestamp = -1;
-    private String data_signature = "";
-    private int client_id = -1;
+    public String variable = "";
+    public int timestamp = -1;
+    public String data_signature = "";
+    public int client_id = -1;
 
     //TODO IMPLEMENTAR O LOCK
 
