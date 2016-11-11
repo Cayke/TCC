@@ -142,22 +142,25 @@ public class ServerHandler implements Runnable {
     param: request - A dictionary with client's request data.
     */
     private boolean read(HashMap request) {
-        //todo pegar o lock
-        HashMap<String, Object> dataDict = new HashMap<String, Object>();
-        dataDict.put(Define.variable, server.variable);
-        dataDict.put(Define.timestamp, server.timestamp);
-        dataDict.put(Define.data_signature, server.data_signature);
-        dataDict.put(Define.client_id, server.client_id);
-
+        server.lock.lock();
         HashMap<String, Object> response = new HashMap<String, Object>();
-        response.put(Define.server_id, server.id);
-        response.put("plataform", Define.plataform);
-        response.put(Define.request_code, request.get(Define.request_code));
-        response.put(Define.status, Define.success);
-        response.put(Define.msg, Define.read);
-        response.put(Define.data, dataDict);
+        try {
+            HashMap<String, Object> dataDict = new HashMap<String, Object>();
+            dataDict.put(Define.variable, server.variable);
+            dataDict.put(Define.timestamp, server.timestamp);
+            dataDict.put(Define.data_signature, server.data_signature);
+            dataDict.put(Define.client_id, server.client_id);
 
-        //todo liberar o lock
+            response.put(Define.server_id, server.id);
+            response.put("plataform", Define.plataform);
+            response.put(Define.request_code, request.get(Define.request_code));
+            response.put(Define.status, Define.success);
+            response.put(Define.msg, Define.read);
+            response.put(Define.data, dataDict);
+        }
+        finally {
+            server.lock.unlock();
+        }
 
         try {
             sendMessageToClient(response);
@@ -173,19 +176,22 @@ public class ServerHandler implements Runnable {
     param: request - A dictionary with client's request data.
     */
     private boolean readTimestamp(HashMap request) {
-        //todo pegar o lock
-        HashMap<String, Object> dataDict = new HashMap<String, Object>();
-        dataDict.put(Define.timestamp, server.timestamp);
-
+        server.lock.lock();
         HashMap<String, Object> response = new HashMap<String, Object>();
-        response.put(Define.server_id, server.id);
-        response.put("plataform", Define.plataform);
-        response.put(Define.request_code, request.get(Define.request_code));
-        response.put(Define.status, Define.success);
-        response.put(Define.msg, Define.read_timestamp);
-        response.put(Define.data, dataDict);
+        try {
+            HashMap<String, Object> dataDict = new HashMap<String, Object>();
+            dataDict.put(Define.timestamp, server.timestamp);
 
-        //todo liberar o lock
+            response.put(Define.server_id, server.id);
+            response.put("plataform", Define.plataform);
+            response.put(Define.request_code, request.get(Define.request_code));
+            response.put(Define.status, Define.success);
+            response.put(Define.msg, Define.read_timestamp);
+            response.put(Define.data, dataDict);
+        }
+        finally {
+            server.lock.unlock();
+        }
 
         try {
             sendMessageToClient(response);
@@ -206,7 +212,7 @@ public class ServerHandler implements Runnable {
         String data_signature = (String) request.get(Define.data_signature);
         int client_id = ((Double) request.get(Define.client_id)).intValue();
 
-        //todo pegar o lock
+        server.lock.lock();
         if (timestamp > server.timestamp)
         {
             System.out.println("Recebido variable = " + variable + " e timestamp " + timestamp);
@@ -223,7 +229,8 @@ public class ServerHandler implements Runnable {
             response.put(Define.status, Define.success);
             response.put(Define.msg, Define.variable_updated);
 
-            //todo liberar o lock
+            server.lock.unlock();
+
             try {
                 sendMessageToClient(response);
                 return true;
@@ -233,7 +240,8 @@ public class ServerHandler implements Runnable {
         }
         else
         {
-            //todo liberar o lock
+            server.lock.unlock();
+
             HashMap<String, Object> response = new HashMap<String, Object>();
             response.put(Define.server_id, server.id);
             response.put("plataform", Define.plataform);

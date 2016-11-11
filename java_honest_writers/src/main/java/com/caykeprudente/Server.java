@@ -3,6 +3,8 @@ package com.caykeprudente;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by cayke on 10/11/16.
@@ -18,8 +20,7 @@ public class Server
     public String data_signature = "";
     public int client_id = -1;
 
-    //TODO IMPLEMENTAR O LOCK
-
+    Lock lock = new ReentrantLock();
 
     /*
     Server constructor.
