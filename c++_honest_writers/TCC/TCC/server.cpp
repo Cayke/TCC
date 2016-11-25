@@ -50,9 +50,9 @@ namespace server{
     
     
     /*
-    Fuction where server's main thread keeps waiting for a new connection from client.
-    Starts a new thread to manipulate new connections.
-    */
+     Fuction where server's main thread keeps waiting for a new connection from client.
+     Starts a new thread to manipulate new connections.
+     */
     void waitForConnection()
     {
         int serverSocket, newClientSocket;
@@ -89,45 +89,49 @@ namespace server{
     
     
     /*
-    Waits for client's message.
-    param: socketTCPThread - Socket that has been created for the pair (Server, Client)
-    */
+     Waits for client's message.
+     param: socketTCPThread - Socket that has been created for the pair (Server, Client)
+     */
     void clientConnected(int socketTCPThread)
     {
         std::cout << "Novo cliente conectado, nova thread criada\n";
-        while (true) {
-            char buffer[2048];
-            int n;
-            
-            bzero(buffer,2048);
-            n = read(socketTCPThread,buffer,2047);
-            if (n < 0)
-                error("ERROR reading from socket");
-            
-            printf("Here is the message: %s\n",buffer);
-            
-            close(socketTCPThread);
-            break;
-        }
+        
+        char data[2048];
+        int n;
+        
+        bzero(data,2048);
+        n = read(socketTCPThread,data,2047);
+        if (n < 0)
+            error("ERROR reading from socket");
+        
+        printf("Here is the message: %s\n",data);
+
+        
+//        request = json.loads(data.decode('utf-8'))
+//        self.getRequestStatus(request,socketTCPThread)
+        
+        close(socketTCPThread);
+        break;
+        
     }
     
     /*
-            def clientConnected(self, socketTCPThread):
-            print("Novo cliente conectado, nova thread criada")
-            while True:
-                try:
-                data = socketTCPThread.recv(2048)
-                request = json.loads(data.decode('utf-8'))
-                self.getRequestStatus(request,socketTCPThread)
-                except socket.error as msg:
-                print('Error code: ' + str(msg[0]) + ', Error message: ' + str(msg[1]))
-                print('matando thread')
-                socketTCPThread.close()
-                return False
-                except:
-                print('matando thread')
-                socketTCPThread.close()
-                return False
+     def clientConnected(self, socketTCPThread):
+     print("Novo cliente conectado, nova thread criada")
+     while True:
+     try:
+     data = socketTCPThread.recv(2048)
+     request = json.loads(data.decode('utf-8'))
+     self.getRequestStatus(request,socketTCPThread)
+     except socket.error as msg:
+     print('Error code: ' + str(msg[0]) + ', Error message: ' + str(msg[1]))
+     print('matando thread')
+     socketTCPThread.close()
+     return False
+     except:
+     print('matando thread')
+     socketTCPThread.close()
+     return False
      */
     
     
@@ -139,5 +143,5 @@ namespace server{
         std::cout << msg + "\n";
         exit(1);
     }
-
+    
 }
