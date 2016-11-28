@@ -16,5 +16,8 @@
 rapidjson::Document parseJsonStringToDocument (std::string jsonString);
 int getIntWithValueFromDocument(rapidjson::Document *document, std::string value);
 std::string getStringWithValueFromDocument(rapidjson::Document *document, std::string value);
+std::string getJSONStringForDocument(rapidjson::Document *document);
+void addValueToDocument(rapidjson::Document *document, std::string key, int value);
+void addValueToDocument(rapidjson::Document *document, std::string key, std::string value);
 
 #endif /* jsonHelper_hpp */

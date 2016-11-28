@@ -106,7 +106,7 @@ namespace server{
             error("ERROR reading from socket");
         
         printf("Here is the message: %s\n",data);
-
+        
         rapidjson::Document doc = parseJsonStringToDocument(data);
         getRequestStatus(&doc,socketTCPThread);
         
@@ -115,10 +115,10 @@ namespace server{
     
     
     /*
-    Analyse user's message and forwards to the correct handler.
+     Analyse user's message and forwards to the correct handler.
      param: request - A rapidJson::Document with client's request data.
      param: socketTCP - Socket that has been created for the pair (Server, Client)
-    */
+     */
     void getRequestStatus(rapidjson::Document *request, int socketTCP)
     {
         std::string type = getStringWithValueFromDocument(request, Define::type);
@@ -135,10 +135,31 @@ namespace server{
         }
         else
         {
-//            response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.error, msg = Define.undefined_type)
-//            responseJSON = json.dumps(response)
-//            socketTCP.send(responseJSON.encode('utf-8'))
+            rapidjson::Document document;
+            document.SetObject();
+            
+            addValueToDocument(&document, Define::server_id, ID);
+            addValueToDocument(&document, "plataform", Define::plataform);
+            addValueToDocument(&document, Define::request_code, getIntWithValueFromDocument(request, Define::request_code));
+            addValueToDocument(&document, Define::status, Define::error);
+            addValueToDocument(&document, Define::msg, Define::undefined_type);
+            
+            std::string responseJSON = getJSONStringForDocument(&document);
+            sendResponse(responseJSON, socketTCP);
         }
+    }
+    
+    
+    /*
+     Send a message to the client of the socket.
+     param: responseJSON - A message in JSON format
+     param: socketTCP - Socket that has been created for the pair (Server, Client)
+     */
+    void sendResponse(std::string responseJSON, int socketTCP)
+    {
+        int n = send(socketTCP, responseJSON.c_str(), responseJSON.length(), 0);
+        if (n < 0)
+            error("ERROR writing to socket");
     }
     
     void write(rapidjson::Document *request, int socketTCP)

@@ -21,5 +21,6 @@ namespace server{
     void write(rapidjson::Document *request, int socketTCP);
     void readData(rapidjson::Document *request, int socketTCP);
     void readTimestamp(rapidjson::Document *request, int socketTCP);
+    void sendResponse(std::string responseJSON, int socketTCP);
 }
 #endif /* server_hpp */
