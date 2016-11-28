@@ -17,6 +17,7 @@
 #include <iostream>
 
 #include "define.h"
+#include "jsonHelper.hpp"
 
 namespace server{
     
@@ -106,33 +107,52 @@ namespace server{
         
         printf("Here is the message: %s\n",data);
 
-        
-//        request = json.loads(data.decode('utf-8'))
-//        self.getRequestStatus(request,socketTCPThread)
+        rapidjson::Document doc = parseJsonStringToDocument(data);
+        getRequestStatus(&doc,socketTCPThread);
         
         close(socketTCPThread);
-        break;
-        
     }
     
+    
     /*
-     def clientConnected(self, socketTCPThread):
-     print("Novo cliente conectado, nova thread criada")
-     while True:
-     try:
-     data = socketTCPThread.recv(2048)
-     request = json.loads(data.decode('utf-8'))
-     self.getRequestStatus(request,socketTCPThread)
-     except socket.error as msg:
-     print('Error code: ' + str(msg[0]) + ', Error message: ' + str(msg[1]))
-     print('matando thread')
-     socketTCPThread.close()
-     return False
-     except:
-     print('matando thread')
-     socketTCPThread.close()
-     return False
-     */
+    Analyse user's message and forwards to the correct handler.
+     param: request - A rapidJson::Document with client's request data.
+     param: socketTCP - Socket that has been created for the pair (Server, Client)
+    */
+    void getRequestStatus(rapidjson::Document *request, int socketTCP)
+    {
+        std::string type = getStringWithValueFromDocument(request, Define::type);
+        if (type == Define::write)
+            write(request, socketTCP);
+        else if (type == Define::read)
+            readData(request, socketTCP);
+        else if (type == Define::read_timestamp)
+            readTimestamp(request, socketTCP);
+        else if (type == Define::bye)
+        {
+            close(socketTCP);
+            std::cout << "Cliente desconectou propositalmente";
+        }
+        else
+        {
+//            response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.error, msg = Define.undefined_type)
+//            responseJSON = json.dumps(response)
+//            socketTCP.send(responseJSON.encode('utf-8'))
+        }
+    }
+    
+    void write(rapidjson::Document *request, int socketTCP)
+    {
+        
+    }
+    void readData(rapidjson::Document *request, int socketTCP)
+    {
+        
+    }
+    void readTimestamp(rapidjson::Document *request, int socketTCP)
+    {
+        
+    }
     
     
     /*
