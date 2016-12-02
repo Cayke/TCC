@@ -15,6 +15,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <iostream>
+#include <thread>
 
 #include "define.h"
 #include "jsonHelper.hpp"
@@ -82,7 +83,9 @@ namespace server{
                 error("ERROR on accept");
             
             //todo cria thread para comunicar com o cliente
-            clientConnected(newClientSocket);
+            std::thread t(clientConnected, newClientSocket);
+            t.detach();
+            //clientConnected(newClientSocket);
         }
         
         close(serverSocket);
