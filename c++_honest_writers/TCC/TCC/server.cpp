@@ -246,11 +246,33 @@ namespace server{
         sendResponse(responseJSON, socketTCP);
     }
     
+    
+    /*
+    Sends timestamp in register for client.
+    param: request - A dictionary with client's request data.
+    param: socketTCP - Socket that has been created for the pair (Server, Client)
+    */
     void readTimestamp(rapidjson::Document *request, int socketTCP)
     {
+        //lock.acquire
+        rapidjson::Document response;
+        response.SetObject();
         
+        rapidjson::Value dataDict(rapidjson::kObjectType);
+        addValueToValueStruct(&dataDict, &response, Define::timestamp, TIMESTAMP);
+        
+        addValueToDocument(&response, Define::data, &dataDict);
+        addValueToDocument(&response, Define::server_id, ID);
+        addValueToDocument(&response, "plataform", Define::plataform);
+        addValueToDocument(&response, Define::request_code, getIntWithKeyFromDocument(request, Define::request_code));
+        addValueToDocument(&response, Define::status, Define::success);
+        addValueToDocument(&response, Define::msg, Define::read);
+        
+        std::string responseJSON = getJSONStringForDocument(&response);
+        //lock.release()
+        sendResponse(responseJSON, socketTCP);
     }
-    
+
     
     /*
      This function is called when a system call fails
@@ -260,5 +282,4 @@ namespace server{
         std::cout << msg + "\n";
         exit(1);
     }
-    
 }
