@@ -14,10 +14,14 @@
 #include "rapidjson/stringbuffer.h"
 
 rapidjson::Document parseJsonStringToDocument (std::string jsonString);
-int getIntWithValueFromDocument(rapidjson::Document *document, std::string value);
-std::string getStringWithValueFromDocument(rapidjson::Document *document, std::string value);
+int getIntWithKeyFromDocument(rapidjson::Document *document, std::string key);
+std::string getStringWithKeyFromDocument(rapidjson::Document *document, std::string key);
 std::string getJSONStringForDocument(rapidjson::Document *document);
 void addValueToDocument(rapidjson::Document *document, std::string key, int value);
 void addValueToDocument(rapidjson::Document *document, std::string key, std::string value);
+void addValueToValueStruct(rapidjson::Value *valueObject, rapidjson::Document *document, std::string key, int value);
+void addValueToValueStruct(rapidjson::Value *valueObject, rapidjson::Document *document, std::string key, std::string value);
+void addValueToDocument(rapidjson::Document *document, std::string key, rapidjson::Value *valueObject);
+
 
 #endif /* jsonHelper_hpp */

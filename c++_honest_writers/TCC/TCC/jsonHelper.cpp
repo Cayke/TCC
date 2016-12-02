@@ -26,26 +26,27 @@ Document parseJsonStringToDocument (std::string jsonString)
         return doc;
 }
 
-int getIntWithValueFromDocument(rapidjson::Document *document, std::string value)
+int getIntWithKeyFromDocument(rapidjson::Document *document, std::string key)
 {
-    Value::MemberIterator hello = document->FindMember(value.c_str());
-    assert(hello != document->MemberEnd());
-    assert(hello->value.IsInt());
-    return hello->value.GetInt();
+    Value::MemberIterator value = document->FindMember(key.c_str());
+    assert(value != document->MemberEnd());
+    assert(value->value.IsInt());
+    return value->value.GetInt();
 }
 
-std::string getStringWithValueFromDocument(rapidjson::Document *document, std::string value)
+std::string getStringWithKeyFromDocument(rapidjson::Document *document, std::string key)
 {
-    Value::MemberIterator hello = document->FindMember(value.c_str());
-    assert(hello != document->MemberEnd());
-    assert(hello->value.IsString());
-    return hello->value.GetString();
+    Value::MemberIterator value = document->FindMember(key.c_str());
+    assert(value != document->MemberEnd());
+    assert(value->value.IsString());
+    return value->value.GetString();
 }
 
 std::string getJSONStringForDocument(rapidjson::Document *document)
 {
     StringBuffer sb;
-    PrettyWriter<StringBuffer> writer(sb);
+    //PrettyWriter<StringBuffer> writer(sb);
+    Writer<StringBuffer, Document::EncodingType, ASCII<> > writer(sb);
     document->Accept(writer);
     return sb.GetString();
 }
@@ -53,7 +54,8 @@ std::string getJSONStringForDocument(rapidjson::Document *document)
 void addValueToDocument(rapidjson::Document *document, std::string key, int value)
 {
     rapidjson::Value vKey;
-    vKey.SetString(StringRef(key.c_str()));
+    //vKey.SetString(StringRef(key.c_str()));
+    vKey.SetString(key.c_str(), key.length(), document->GetAllocator());
     
     rapidjson::Value vValue;
     vValue.SetInt(value);
@@ -63,13 +65,47 @@ void addValueToDocument(rapidjson::Document *document, std::string key, int valu
 void addValueToDocument(rapidjson::Document *document, std::string key, std::string value)
 {
     rapidjson::Value vKey;
-    vKey.SetString(StringRef(key.c_str()));
+    //vKey.SetString(StringRef(key.c_str()));
+    vKey.SetString(key.c_str(), key.length(), document->GetAllocator());
     
     rapidjson::Value vValue;
-    vValue.SetString(StringRef(value.c_str()));
+    //vValue.SetString(StringRef(value.c_str()));
+    vValue.SetString(value.c_str(), value.length(), document->GetAllocator());
     
     document->AddMember(vKey, vValue, document->GetAllocator());
 }
 
+void addValueToValueStruct(rapidjson::Value *valueObject, rapidjson::Document *document, std::string key, int value)
+{
+    rapidjson::Value vKey;
+    //vKey.SetString(StringRef(key.c_str()));
+    vKey.SetString(key.c_str(), key.length(), document->GetAllocator());
+    
+    rapidjson::Value vValue;
+    vValue.SetInt(value);
+    
+    valueObject->AddMember(vKey, vValue, document->GetAllocator());
+}
+void addValueToValueStruct(rapidjson::Value *valueObject, rapidjson::Document *document, std::string key, std::string value)
+{
+    rapidjson::Value vKey;
+    //vKey.SetString(StringRef(key.c_str()));
+    vKey.SetString(key.c_str(), key.length(), document->GetAllocator());
+    
+    rapidjson::Value vValue;
+    //vValue.SetString(StringRef(value.c_str()));
+    vValue.SetString(value.c_str(), value.length(), document->GetAllocator());
+    
+    valueObject->AddMember(vKey, vValue, document->GetAllocator());
+}
+
+void addValueToDocument(rapidjson::Document *document, std::string key, rapidjson::Value *valueObject)
+{
+    rapidjson::Value vKey;
+    //vKey.SetString(StringRef(key.c_str()));
+    vKey.SetString(key.c_str(), key.length(), document->GetAllocator());
+    
+    document->AddMember(vKey, *valueObject, document->GetAllocator());
+}
 
 

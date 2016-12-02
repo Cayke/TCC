@@ -121,7 +121,7 @@ namespace server{
      */
     void getRequestStatus(rapidjson::Document *request, int socketTCP)
     {
-        std::string type = getStringWithValueFromDocument(request, Define::type);
+        std::string type = getStringWithKeyFromDocument(request, Define::type);
         if (type == Define::write)
             write(request, socketTCP);
         else if (type == Define::read)
@@ -140,7 +140,7 @@ namespace server{
             
             addValueToDocument(&document, Define::server_id, ID);
             addValueToDocument(&document, "plataform", Define::plataform);
-            addValueToDocument(&document, Define::request_code, getIntWithValueFromDocument(request, Define::request_code));
+            addValueToDocument(&document, Define::request_code, getIntWithKeyFromDocument(request, Define::request_code));
             addValueToDocument(&document, Define::status, Define::error);
             addValueToDocument(&document, Define::msg, Define::undefined_type);
             
@@ -162,14 +162,90 @@ namespace server{
             error("ERROR writing to socket");
     }
     
+    
+    /*
+    Write data in register if the requirements are followed.
+    param: request - A dictionary with client's request data.
+    param: socketTCP - Socket that has been created for the pair (Server, Client)
+    */
     void write(rapidjson::Document *request, int socketTCP)
     {
+        std::string variable = getStringWithKeyFromDocument(request, Define::variable);
+        int timestamp = getIntWithKeyFromDocument(request, Define::timestamp);
+        std::string data_signature = getStringWithKeyFromDocument(request, Define::data_signature);
+        int client_id = getIntWithKeyFromDocument(request, Define::client_id);
         
+        std::cout << "Recebido variable = " + variable + " e timestamp " + std::to_string(timestamp) + "\n";
+        
+        //lock.aquire
+        if (timestamp > TIMESTAMP)
+        {
+            VARIABLE = variable;
+            TIMESTAMP = timestamp;
+            DATA_SIGNATURE = data_signature;
+            CLIENT_ID = client_id;
+            
+            rapidjson::Document document;
+            document.SetObject();
+            
+            addValueToDocument(&document, Define::server_id, ID);
+            addValueToDocument(&document, "plataform", Define::plataform);
+            addValueToDocument(&document, Define::request_code, getIntWithKeyFromDocument(request, Define::request_code));
+            addValueToDocument(&document, Define::status, Define::success);
+            addValueToDocument(&document, Define::msg, Define::variable_updated);
+            
+            std::string responseJSON = getJSONStringForDocument(&document);
+            //lock.release()
+            sendResponse(responseJSON, socketTCP);
+        }
+        else
+        {
+            //lock.release()
+            
+            rapidjson::Document document;
+            document.SetObject();
+            
+            addValueToDocument(&document, Define::server_id, ID);
+            addValueToDocument(&document, "plataform", Define::plataform);
+            addValueToDocument(&document, Define::request_code, getIntWithKeyFromDocument(request, Define::request_code));
+            addValueToDocument(&document, Define::status, Define::error);
+            addValueToDocument(&document, Define::msg, Define::outdated_timestamp);
+            
+            std::string responseJSON = getJSONStringForDocument(&document);
+            sendResponse(responseJSON, socketTCP);
+        }
     }
+    
+    
+    /*
+    Sends data in register for client.
+    param: request - A dictionary with client's request data.
+    param: socketTCP - Socket that has been created for the pair (Server, Client)
+     */
     void readData(rapidjson::Document *request, int socketTCP)
     {
+        //lock.acquire
+        rapidjson::Document response;
+        response.SetObject();
         
+        rapidjson::Value dataDict(rapidjson::kObjectType);
+        addValueToValueStruct(&dataDict, &response, Define::variable, VARIABLE);
+        addValueToValueStruct(&dataDict, &response, Define::timestamp, TIMESTAMP);
+        addValueToValueStruct(&dataDict, &response, Define::data_signature, DATA_SIGNATURE);
+        addValueToValueStruct(&dataDict, &response, Define::client_id, CLIENT_ID);
+        
+        addValueToDocument(&response, Define::data, &dataDict);
+        addValueToDocument(&response, Define::server_id, ID);
+        addValueToDocument(&response, "plataform", Define::plataform);
+        addValueToDocument(&response, Define::request_code, getIntWithKeyFromDocument(request, Define::request_code));
+        addValueToDocument(&response, Define::status, Define::success);
+        addValueToDocument(&response, Define::msg, Define::read);
+        
+        std::string responseJSON = getJSONStringForDocument(&response);
+        //lock.release()
+        sendResponse(responseJSON, socketTCP);
     }
+    
     void readTimestamp(rapidjson::Document *request, int socketTCP)
     {
         
