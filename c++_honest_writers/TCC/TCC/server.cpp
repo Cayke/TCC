@@ -16,6 +16,7 @@
 #include <netinet/in.h>
 #include <iostream>
 #include <thread>
+#include <mutex>
 
 #include "define.h"
 #include "jsonHelper.hpp"
@@ -31,8 +32,7 @@ namespace server{
     std::string DATA_SIGNATURE = "";
     int CLIENT_ID = -1;
     
-    //LOCK = threading.Lock();
-    
+    std::mutex LOCK;
     
     
     /*
@@ -82,10 +82,8 @@ namespace server{
             if (newClientSocket < 0)
                 error("ERROR on accept");
             
-            //todo cria thread para comunicar com o cliente
             std::thread t(clientConnected, newClientSocket);
             t.detach();
-            //clientConnected(newClientSocket);
         }
         
         close(serverSocket);
@@ -180,7 +178,7 @@ namespace server{
         
         std::cout << "Recebido variable = " + variable + " e timestamp " + std::to_string(timestamp) + "\n";
         
-        //lock.aquire
+        LOCK.lock();
         if (timestamp > TIMESTAMP)
         {
             VARIABLE = variable;
@@ -198,12 +196,12 @@ namespace server{
             addValueToDocument(&document, Define::msg, Define::variable_updated);
             
             std::string responseJSON = getJSONStringForDocument(&document);
-            //lock.release()
+            LOCK.unlock();
             sendResponse(responseJSON, socketTCP);
         }
         else
         {
-            //lock.release()
+            LOCK.unlock();
             
             rapidjson::Document document;
             document.SetObject();
@@ -227,7 +225,7 @@ namespace server{
      */
     void readData(rapidjson::Document *request, int socketTCP)
     {
-        //lock.acquire
+        LOCK.lock();
         rapidjson::Document response;
         response.SetObject();
         
@@ -245,7 +243,7 @@ namespace server{
         addValueToDocument(&response, Define::msg, Define::read);
         
         std::string responseJSON = getJSONStringForDocument(&response);
-        //lock.release()
+        LOCK.unlock();
         sendResponse(responseJSON, socketTCP);
     }
     
@@ -257,7 +255,7 @@ namespace server{
     */
     void readTimestamp(rapidjson::Document *request, int socketTCP)
     {
-        //lock.acquire
+        LOCK.lock();
         rapidjson::Document response;
         response.SetObject();
         
@@ -272,7 +270,7 @@ namespace server{
         addValueToDocument(&response, Define::msg, Define::read);
         
         std::string responseJSON = getJSONStringForDocument(&response);
-        //lock.release()
+        LOCK.unlock();
         sendResponse(responseJSON, socketTCP);
     }
 
