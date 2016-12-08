@@ -18,8 +18,7 @@ class Server: NSObject {
     var DATA_SIGNATURE = "";
     var CLIENT_ID = -1;
     
-    //todo
-    //let LOCK : pthread_mutex_t
+    var LOCK = pthread_mutex_t();
     
     
     /*
@@ -34,6 +33,8 @@ class Server: NSObject {
         self.ID = id;
         self.HOST = ip;
         self.PORT = port;
+        
+        pthread_mutex_init(&self.LOCK, nil)
     }
     
     
@@ -47,8 +48,9 @@ class Server: NSObject {
         case .success:
             while true {
                 if let clientSocket = serverSocket.accept() {
-                    //todo criar thread
-                    clientConnected(clientSocket: clientSocket)
+                    DispatchQueue.global(qos: .background).async {
+                        self.clientConnected(clientSocket: clientSocket)
+                        }
                 } else {
                     print("accept error")
                 }
@@ -91,7 +93,7 @@ class Server: NSObject {
             self.read(request: request, clientSocket: clientSocket)
         }
         else if type == Define.read_timestamp {
-             self.readTimestamp(request: request, clientSocket: clientSocket)
+            self.readTimestamp(request: request, clientSocket: clientSocket)
         }
         else if type == Define.bye {
             clientSocket.close()
@@ -111,17 +113,17 @@ class Server: NSObject {
     
     
     /*
-    Write data in register if the requirements are followed.
-    param: request - A dictionary with client's request data.
-    param: socketTCP - Socket that has been created for the pair (Server, Client)
-    */
+     Write data in register if the requirements are followed.
+     param: request - A dictionary with client's request data.
+     param: socketTCP - Socket that has been created for the pair (Server, Client)
+     */
     func write (request: Dictionary<String, Any>, clientSocket: TCPClient) {
         let variable : String = request[Define.variable] as! String
         let timestamp : Int = request[Define.timestamp] as! Int
         let signature : String = request[Define.data_signature] as! String
         let client_id : Int = request[Define.client_id] as! Int
         
-        //lock.acquire
+        pthread_mutex_lock(&self.LOCK)
         if timestamp > self.TIMESTAMP {
             print ("Recebido variable = \(variable) e timestamp = \(timestamp)")
             
@@ -135,12 +137,12 @@ class Server: NSObject {
                             Define.request_code: request[Define.request_code],
                             Define.status: Define.success,
                             Define.msg: Define.variable_updated]
-            //lock.release
+            pthread_mutex_unlock(&self.LOCK)
             
             sendResponse(response: response, clientSocket: clientSocket)
         }
         else {
-            //lock.release
+            pthread_mutex_unlock(&self.LOCK)
             
             let response = [Define.server_id: self.ID,
                             "plataform": Define.plataform,
@@ -154,12 +156,12 @@ class Server: NSObject {
     
     
     /*
-    Sends data in register for client.
-    param: request - A dictionary with client's request data.
-    param: socketTCP - Socket that has been created for the pair (Server, Client)
-    */
+     Sends data in register for client.
+     param: request - A dictionary with client's request data.
+     param: socketTCP - Socket that has been created for the pair (Server, Client)
+     */
     func read (request: Dictionary<String, Any>, clientSocket: TCPClient) {
-        //lock.acquire
+        pthread_mutex_lock(&self.LOCK)
         let dataDict = [Define.variable: self.VARIABLE,
                         Define.timestamp: self.TIMESTAMP,
                         Define.data_signature: self.DATA_SIGNATURE,
@@ -170,19 +172,19 @@ class Server: NSObject {
                         Define.status: Define.success,
                         Define.msg: Define.read,
                         Define.data: dataDict]
-        //lock.release
+        pthread_mutex_unlock(&self.LOCK)
         
         sendResponse(response: response, clientSocket: clientSocket)
     }
     
     
     /*
-    Sends timestamp in register for client.
-    param: request - A dictionary with client's request data.
-    param: socketTCP - Socket that has been created for the pair (Server, Client)
-    */
+     Sends timestamp in register for client.
+     param: request - A dictionary with client's request data.
+     param: socketTCP - Socket that has been created for the pair (Server, Client)
+     */
     func readTimestamp (request: Dictionary<String, Any>, clientSocket: TCPClient) {
-        //lock.acquire
+        pthread_mutex_lock(&self.LOCK)
         let dataDict = [Define.timestamp: self.TIMESTAMP]
         let response = [Define.server_id: self.ID,
                         "plataform": Define.plataform,
@@ -190,7 +192,7 @@ class Server: NSObject {
                         Define.status: Define.success,
                         Define.msg: Define.read,
                         Define.data: dataDict]
-        //lock.release
+        pthread_mutex_unlock(&self.LOCK)
         
         sendResponse(response: response, clientSocket: clientSocket)
     }
