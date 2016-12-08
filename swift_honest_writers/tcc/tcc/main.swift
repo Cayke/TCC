@@ -8,4 +8,4 @@
 
 import Foundation
 
-Server(id: 0, ip: "localhost", port: 5000).waitForConnection();
+Server(id: 0, ip: "127.0.0.1", port: 5000).waitForConnection();
