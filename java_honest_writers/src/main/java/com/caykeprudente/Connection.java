@@ -23,7 +23,7 @@ public class Connection {
         DataOutputStream dOut = new DataOutputStream(socket.getOutputStream());
         dOut.write(requestJSON.getBytes());
         dOut.flush(); // Send the data
-        dOut.close();
+        //dOut.close();
     }
 
     /*
@@ -31,15 +31,13 @@ public class Connection {
     param: socket - socket to get the message
     return: (Dictionary) Message from client; null if error.
      */
-    public static HashMap<String, Object> read(Socket socket) {
+    public static Map<String, Object> read(Socket socket) {
         boolean shouldContinue = true;
         while (shouldContinue) {
             String jsonMessage = readInputStream(socket);
             if (jsonMessage != null) {
-                return new GsonBuilder().create().fromJson(jsonMessage, HashMap.class);
+                return new GsonBuilder().create().fromJson(jsonMessage, Map.class);
             }
-            else
-                shouldContinue = false;
         }
 
         return null;
