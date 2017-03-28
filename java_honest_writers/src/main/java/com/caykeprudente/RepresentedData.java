@@ -55,11 +55,11 @@ public class RepresentedData {
         System.out.println("Digite seu nome:");
         name = scanner.nextLine();
 
-        System.out.println("Digite sua idade:");
-        age = scanner.nextInt();
-
         System.out.println("Digite sua profissao:");
         carrer = scanner.nextLine();
+
+        System.out.println("Digite sua idade:");
+        age = scanner.nextInt();
 
         Map<String, Object> data = new HashMap<String, Object>();
         data.put( "name", name);
