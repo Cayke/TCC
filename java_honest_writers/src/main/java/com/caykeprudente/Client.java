@@ -1,14 +1,9 @@
 package com.caykeprudente;
 
-import com.sun.glass.ui.SystemClipboard;
 import com.sun.tools.javac.util.Pair;
-
-import java.net.Socket;
-import java.security.Signature;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-import java.util.StringTokenizer;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -18,17 +13,17 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by cayke on 19/03/17.
  */
 public class Client {
-    ArrayList<Pair<String, Integer>> servers; // contains a tuple of (ip,port)
+    List<Pair<String, Integer>> servers; // contains a tuple of (ip,port)
     int quorum = 2;
 
-    int id = -1; // id do client. serve para identificar qual chave usar no RSA
+    Double id = -1d; // id do client. serve para identificar qual chave usar no RSA
 
     Lock lock = new ReentrantLock();
 
-    private int request_code = 0;
+    private Double request_code = 0d;
 
-    ArrayList<ResponseData> responses;
-    ArrayList<Pair<String, Integer>> out_dated_servers;
+    List<ResponseData> responses;
+    List<Pair<String, Integer>> out_dated_servers;
 
     Semaphore semaphore = new Semaphore(0);
     Lock lock_print = new ReentrantLock();
@@ -42,7 +37,7 @@ public class Client {
     param: id - Client id
     param: servers - Array with servers(ip+port)
     */
-    public Client(int id, ArrayList<Pair<String, Integer>> servers) {
+    public Client(Double id, List<Pair<String, Integer>> servers) {
         this.id = id;
         this.servers = servers;
 
@@ -106,14 +101,13 @@ public class Client {
     param: value - Value to be written in servers (dictionary from RepresentedData class)
     */
     private void write(String value) {
-        int timestamp = readTimestamp();
+        Double timestamp = readTimestamp();
         timestamp = incrementTimestamp(timestamp);
 
-        //todo
-        //data_signature = Signature.signData(Signature.getPrivateKey(-1,self.ID), value+str(timestamp))
+        String dataSignature = MySignature.signData(MySignature.getPrivateKey(-1d, id), value+timestamp.intValue());
 
         for (Pair<String, Integer> server : servers) {
-            ResponseData data = new ResponseData(value, timestamp, null, id, request_code, server);
+            ResponseData data = new ResponseData(value, timestamp, dataSignature, id, request_code, server);
             ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write, data);
             Thread thread = new Thread(handler);
             thread.start();
@@ -127,7 +121,7 @@ public class Client {
     Read Timestamps from servers
     return: (int) Timestamp value; -1 if cant get timestamp.
     */
-    private int readTimestamp() {
+    private Double readTimestamp() {
         lock.lock();
         responses = new ArrayList<ResponseData>();
         out_dated_servers = new ArrayList<Pair<String, Integer>>();
@@ -138,7 +132,7 @@ public class Client {
         lock_print.unlock();
 
         for (Pair<String, Integer> server : servers) {
-            ResponseData data = new ResponseData(null, 0, null, id, request_code, server);
+            ResponseData data = new ResponseData(null, 0d, null, id, request_code, server);
             ClientHandler handler = new ClientHandler(this, ClientHandler.Function.readTimestamp, data);
             Thread thread = new Thread(handler);
             thread.start();
@@ -153,7 +147,7 @@ public class Client {
                 lock.unlock();
 
                 if (responses.size() >= quorum) {
-                    int timestamp = analyseTimestampResponse(responses);
+                    Double timestamp = analyseTimestampResponse(responses);
 
                     lock_print.lock();
                     System.out.println("Li o timestamp do server: " + timestamp);
@@ -165,18 +159,18 @@ public class Client {
                     lock_print.lock();
                     System.out.println("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.");
                     lock_print.unlock();
-                    return -1;
+                    return -1d;
                 }
             }
             else {
                 lock_print.lock();
                 System.out.println("Nao foi possivel ler nenhum dado. Timeout da conexao expirado");
                 lock_print.unlock();
-                return -1;
+                return -1d;
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
-            return -1;
+            return -1d;
         }
     }
 
@@ -195,7 +189,7 @@ public class Client {
         lock_print.unlock();
 
         for (Pair<String, Integer> server : servers) {
-            ResponseData data = new ResponseData(null, 0, null, id, request_code, server);
+            ResponseData data = new ResponseData(null, 0d, null, id, request_code, server);
             ClientHandler handler = new ClientHandler(this, ClientHandler.Function.read, data);
             Thread thread = new Thread(handler);
             thread.start();
@@ -272,7 +266,7 @@ public class Client {
     param: serverTimestamp - Highest timestamp from a quorum of servers
     return: (int) Incremented timestamp
     */
-    private int incrementTimestamp(int timestamp) {
+    private Double incrementTimestamp(Double timestamp) {
         return timestamp+1;
     }
 
@@ -282,13 +276,13 @@ public class Client {
     param: response - Servers' responses
     return: (tuple) Tuple with the actual data (value, timestamp, signature, writter_id)
     */
-    private ResponseData analyseResponse(ArrayList<ResponseData> responses) {
+    private ResponseData analyseResponse(List<ResponseData> responses) {
         String value = "";
-        int timestamp = -1;
+        Double timestamp = -1d;
         int repeatTimes = 0;
         ArrayList<Pair> auxServers = new ArrayList<Pair>();
         String data_signature = "";
-        int client_id = -1;
+        Double client_id = -1d;
 
         for (ResponseData response : responses) {
             if (response.timestamp == -1 || response.client_id == -1) {
@@ -296,8 +290,8 @@ public class Client {
                 out_dated_servers.add(response.server);
             }
             else {
-                if (true) { //todo //Signature.verifySign(Signature.getPublicKey(-1, r_client_id), data_sign, rValue + str(rTimestamp)):
-                    if (response.timestamp == timestamp) {
+                if (MySignature.verifySign(MySignature.getPublicKey(-1d, response.client_id), response.data_signature, response.value+response.timestamp.intValue())) {
+                    if (response.timestamp.equals(timestamp)) {
                         repeatTimes = repeatTimes + 1;
                         auxServers.add(response.server);
                     }
@@ -319,7 +313,7 @@ public class Client {
             }
         }
 
-        return new ResponseData(value, timestamp, data_signature, client_id, 0, null);
+        return new ResponseData(value, timestamp, data_signature, client_id, 0d, null);
     }
 
 
@@ -328,12 +322,12 @@ public class Client {
     param: responses - Servers' responses
     return: (int) Highest timestamp founded
     */
-    private int analyseTimestampResponse(ArrayList<ResponseData> responses) {
-        int timestamp = -1;
+    private Double analyseTimestampResponse(List<ResponseData> responses) {
+        Double timestamp = -1d;
         int repeatTimes = 0;
 
         for (ResponseData response : responses) {
-            if (response.timestamp == timestamp)
+            if (response.timestamp.equals(timestamp))
                 repeatTimes++;
             else if (response.timestamp > timestamp) {
                 timestamp = response.timestamp;

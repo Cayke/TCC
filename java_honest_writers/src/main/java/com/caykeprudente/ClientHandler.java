@@ -2,6 +2,7 @@ package com.caykeprudente;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.internal.LinkedTreeMap;
 import com.sun.tools.javac.util.Pair;
 
 import java.io.DataOutputStream;
@@ -60,10 +61,10 @@ public class ClientHandler implements Runnable {
     private void writeOnServer() {
         Map<String, Object> request = new HashMap<String, Object>();
         request.put( "type", Define.write);
-        request.put( "timestamp", data.timestamp);
+        request.put( "timestamp", data.timestamp.intValue());
         request.put( "variable", data.value);
-        request.put( "request_code", data.request_code);
-        request.put( "client_id", data.client_id);
+        request.put( "request_code", data.request_code.intValue());
+        request.put( "client_id", data.client_id.intValue());
         request.put( "data_signature", data.data_signature);
 
         Socket clientSocket = null;
@@ -78,9 +79,10 @@ public class ClientHandler implements Runnable {
             client.lock_print.unlock();
         }
 
-        HashMap<String, Object> messageFromServer = Connection.read(clientSocket);
+        LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
         try {
-            if (messageFromServer.get(Define.status).equals(Define.success)) {
+            String status = (String) messageFromServer.get(Define.status);
+            if (status.equals(Define.success)) {
                 client.lock_print.lock();
                 System.out.println("Variable updated");
                 client.lock_print.unlock();
@@ -103,14 +105,14 @@ public class ClientHandler implements Runnable {
     private void readFromServer() {
         Map<String, Object> request = new HashMap<String, Object>();
         request.put( "type", Define.read);
-        request.put( "request_code", data.request_code);
-        request.put( "client_id", client.id);
+        request.put( "request_code", data.request_code.intValue());
+        request.put( "client_id", client.id.intValue());
 
         Socket clientSocket = null;
         try {
             clientSocket = new Socket(data.server.fst, data.server.snd);
             Connection.sendMessage(request, clientSocket);
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
 
             client.lock_print.lock();
@@ -118,11 +120,18 @@ public class ClientHandler implements Runnable {
             client.lock_print.unlock();
         }
 
-        HashMap<String, Object> messageFromServer = Connection.read(clientSocket);
+        LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
+        try {
+            clientSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        if (messageFromServer.get(Define.status).equals(Define.success)
-                && ((Integer) messageFromServer.get(Define.request_code)) == data.request_code) {
-            HashMap<String, Object> dataDict = (HashMap<String, Object>) messageFromServer.get(Define.data);
+        String status = (String) messageFromServer.get(Define.status);
+        Double request_code = (Double) messageFromServer.get(Define.request_code);
+
+        if (status.equals(Define.success) && request_code.equals(data.request_code)) {
+            LinkedTreeMap<String, Object> dataDict = (LinkedTreeMap<String, Object>) messageFromServer.get(Define.data);
             ResponseData responseData = new ResponseData(dataDict, data.server);
 
             client.lock.lock();
@@ -140,12 +149,12 @@ public class ClientHandler implements Runnable {
             }
             client.lock.unlock();
         }
-        else if (messageFromServer.get(Define.status).equals(Define.error)) {
+        else if (status.equals(Define.error)) {
             client.lock_print.lock();
             System.out.println("Ocorreu algum erro na request");
             client.lock_print.unlock();
         }
-        else if (((Integer) messageFromServer.get(Define.request_code)) != data.request_code) {
+        else if (!request_code.equals(data.request_code)) {
             client.lock_print.lock();
             System.out.println("Response atrasada");
             client.lock_print.unlock();
@@ -160,8 +169,8 @@ public class ClientHandler implements Runnable {
     private void readTimestampFromServer() {
         Map<String, Object> request = new HashMap<String, Object>();
         request.put( "type", Define.read_timestamp);
-        request.put( "request_code", data.request_code);
-        request.put( "client_id", client.id);
+        request.put( "request_code", data.request_code.intValue());
+        request.put( "client_id", client.id.intValue());
 
         Socket clientSocket = null;
         try {
@@ -175,11 +184,13 @@ public class ClientHandler implements Runnable {
             client.lock_print.unlock();
         }
 
-        HashMap<String, Object> messageFromServer = Connection.read(clientSocket);
+        LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
 
-        if (messageFromServer.get(Define.status).equals(Define.success)
-                && ((Integer) messageFromServer.get(Define.request_code)) == data.request_code) {
-            HashMap<String, Object> dataDict = (HashMap<String, Object>) messageFromServer.get(Define.data);
+        String status = (String) messageFromServer.get(Define.status);
+        Double request_code = (Double) messageFromServer.get(Define.request_code);
+
+        if (status.equals(Define.success) && request_code.equals(data.request_code)) {
+            LinkedTreeMap<String, Object> dataDict = (LinkedTreeMap<String, Object>) messageFromServer.get(Define.data);
             ResponseData responseData = new ResponseData(dataDict, data.server);
 
             client.lock.lock();
@@ -197,12 +208,12 @@ public class ClientHandler implements Runnable {
             }
             client.lock.unlock();
         }
-        else if (messageFromServer.get(Define.status).equals(Define.error)) {
+        else if (status.equals(Define.error)) {
             client.lock_print.lock();
             System.out.println("Ocorreu algum erro na request");
             client.lock_print.unlock();
         }
-        else if (((Integer) messageFromServer.get(Define.request_code)) != data.request_code) {
+        else if (!request_code.equals(data.request_code)) {
             client.lock_print.lock();
             System.out.println("Response atrasada");
             client.lock_print.unlock();

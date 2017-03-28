@@ -1,5 +1,6 @@
 package com.caykeprudente;
 
+import com.google.gson.internal.LinkedTreeMap;
 import com.sun.tools.javac.util.Pair;
 
 import java.util.HashMap;
@@ -19,14 +20,14 @@ public class ResponseData {
     */
 
     String value;
-    int timestamp;
+    Double timestamp;
     String data_signature;
-    int client_id;
+    Double client_id;
     Pair<String, Integer> server;
 
-    int request_code;
+    Double request_code;
 
-    public ResponseData(String value, int timestamp, String data_signature, int client_id, int request_code, Pair<String, Integer> server) {
+    public ResponseData(String value, Double timestamp, String data_signature, Double client_id, Double request_code, Pair<String, Integer> server) {
         this.value = value;
         this.timestamp = timestamp;
         this.data_signature = data_signature;
@@ -35,11 +36,11 @@ public class ResponseData {
         this.server = server;
     };
 
-    public ResponseData(HashMap<String, Object> dictionary, Pair<String, Integer> server) {
-        timestamp = (Integer) dictionary.get(Define.timestamp);
+    public ResponseData(LinkedTreeMap<String, Object> dictionary, Pair<String, Integer> server) {
+        timestamp = (Double) dictionary.get(Define.timestamp);
         value = (String) dictionary.get(Define.variable);
         data_signature = (String) dictionary.get(Define.data_signature);
-        client_id = (Integer) dictionary.get(Define.client_id);
+        client_id = (Double) dictionary.get(Define.client_id);
         this.server = server;
     }
 }
