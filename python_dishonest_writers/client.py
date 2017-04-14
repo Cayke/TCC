@@ -7,14 +7,16 @@ from signature import Signature
 
 class Client ():
     SERVERS = [] # contains a tuple of (ip, port)
-    QUORUM = 2
+
+    FAULTS = 1 #number of faults system can handle
+    QUORUM = 2*FAULTS + 1
 
     ID = -1 # id do cliente. serve para identificar qual chave usar no RSA
-
 
     LOCK = threading.Lock()
     REQUEST_CODE = 0
     RESPONSES = [] # armazena tuplas (value, timestamp, data_signature, client_id, server)
+    ECHOES = [] # armazena as assinaturas dos servidores (server_id, data_signature)
     OUT_DATED_SERVERS = []
 
 
@@ -86,14 +88,17 @@ class Client ():
     def write(self, value):
         timestamp = self.readTimestamp()
         timestamp = self.incrementTimestamp(timestamp)
+        echoes = self.getEchoes(value, timestamp)
 
-        data_signature = Signature.signData(Signature.getPrivateKey(-1,self.ID), value+str(timestamp))
+        if (echoes is not None):
+            for server in self.SERVERS:
+                threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, echoes, self.ID, self.REQUEST_CODE)).start()
 
-        for server in self.SERVERS:
-            threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, data_signature, self.ID, self.REQUEST_CODE)).start()
+            self.REQUEST_CODE = self.REQUEST_CODE + 1
 
-        self.REQUEST_CODE = self.REQUEST_CODE + 1
-
+        else:
+            with self.LOCK_PRINT:
+                print('Nao foi possivel fazer a escrita')
 
     '''
     Read Timestamps from servers
@@ -133,6 +138,52 @@ class Client ():
             with self.LOCK_PRINT:
                 print("Nao foi possivel ler nenhum dado. Timeout da conexao expirado")
             return -1
+
+
+    '''
+    Obtains echoes from servers.
+    param: value - Value to be written in servers (dictionary from RepresentedData class)
+    param: timestamp - Timestamp from value
+    return: (int) Timestamp value; -1 if cant get timestamp.
+    '''
+    def getEchoes(self, value, timestamp):
+        with self.LOCK:
+            self.ECHOES = []
+
+        with self.LOCK_PRINT:
+            print("Obtendo echos dos servidores....")
+        for server in self.SERVERS:
+            threading.Thread(target=self.readEchoeFromServer, args=(server, self.REQUEST_CODE, value, timestamp)).start()
+
+        wasReleased = self.SEMAPHORE.acquire(True, Define.timeout)
+
+        if wasReleased:
+            with self.LOCK:
+                self.REQUEST_CODE = self.REQUEST_CODE + 1
+
+            if (len(self.ECHOES) >= self.QUORUM):
+                validEchoes = self.analyseEchoes(self.ECHOES, value, timestamp)
+
+                if len(validEchoes) >= self.QUORUM:
+                    with self.LOCK_PRINT:
+                        print('Li os echos com sucesso')
+
+                    return validEchoes
+                else:
+                    with self.LOCK_PRINT:
+                        print('Li os echos, mas nao deu quorum. Algum echo veio errado.')
+
+                    return None
+
+            else:
+                with self.LOCK_PRINT:
+                    print("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.")
+                return None
+
+        else:
+            with self.LOCK_PRINT:
+                print("Nao foi possivel ler nenhum dado. Timeout da conexao expirado")
+            return None
 
 
     '''
@@ -190,16 +241,20 @@ class Client ():
 
 
     '''
-    Sends the data to be written in a specific server.
+    Makes the request for write the data in a specific server.
     param: server - Server to send the request
     param: value - Value to be written
     param: timestamp - Timestamp from value
-    param: data_signature - Signature from value+timestamp
+    param: echos - Signatures for value+timestamp from servers
     param: client_id - Id from the client that created the value
     param: request_code - Request ID identifier
     '''
-    def writeOnServer(self, server, value, timestamp, data_signature, client_id, request_code):
-            request = dict(type=Define.write, timestamp=timestamp, variable=value, request_code = request_code, client_id = client_id, data_signature = data_signature)
+    def writeOnServer(self, server, value, timestamp, echoes, client_id, request_code):
+            echoesArray = []
+            for (server_id, signature) in echoes:
+                echoesArray.append(dict(server_id = server_id, data_signature = signature))
+
+            request = dict(type=Define.write, timestamp=timestamp, variable=value, request_code = request_code, client_id = client_id, echoes = echoesArray)
             requestJSON = json.dumps(request)
 
             TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -286,6 +341,40 @@ class Client ():
             with self.LOCK_PRINT:
                 print("Response atrasada.")
 
+    '''
+    Gets the echoe from a server and append in the echoes array if possible
+    param: server - Server to send the request
+    param: request_code - Request ID identifier
+    '''
+    def readEchoeFromServer(self, server, request_code, value, timestamp):
+        messageFromServer = self.getEchoeFromServer(server, request_code, value, timestamp)
+
+        if messageFromServer[Define.status] == Define.success and messageFromServer[Define.request_code] == self.REQUEST_CODE:
+            data = messageFromServer[Define.data]
+            data_signature = data[Define.data_signature]
+            server_id = messageFromServer[Define.server_id]
+
+            with self.LOCK:
+                if len(self.ECHOES) < self.QUORUM - 1:
+                    self.ECHOES.append((server_id, data_signature))
+
+                elif len(self.ECHOES) == self.QUORUM - 1:
+                    self.ECHOES.append((server_id, data_signature))
+                    self.SEMAPHORE.release()
+
+                else:
+                    # do nothing
+                    with self.LOCK_PRINT:
+                        print("Quorum ja encheu. Jogando request fora...")
+
+        elif messageFromServer[Define.status] == Define.error:
+            with self.LOCK_PRINT:
+                print("Ocorreu algum erro na request")
+
+        elif messageFromServer[Define.request_code] != self.REQUEST_CODE:
+            with self.LOCK_PRINT:
+                print("Response atrasada.")
+
 
     '''
     Makes the request for getting the value registered at a specific server
@@ -311,6 +400,25 @@ class Client ():
     '''
     def getTimestampFromServer(self, server, request_code):
         request = dict(type=Define.read_timestamp, request_code=request_code, client_id=self.ID)
+        requestJSON = json.dumps(request)
+        TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        TCPSocket.connect(server)
+        TCPSocket.send(requestJSON.encode('utf-8'))
+
+        messageFromServerJSON, server = TCPSocket.recvfrom(2048)
+
+        return json.loads(messageFromServerJSON.decode('utf-8'))
+
+
+    '''
+    Makes the request for getting the echoe for <v,t> at a specific server
+    param: server - Server to send the request
+    param: request_code - Request ID identifier
+    param: value - Value to be written
+    param: timestamp - Timestamp from value
+    '''
+    def getEchoeFromServer(self, server, request_code, value, timestamp):
+        request = dict(type=Define.get_echoe, request_code=request_code, client_id=self.ID, variable = value, timestamp = timestamp)
         requestJSON = json.dumps(request)
         TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TCPSocket.connect(server)
@@ -381,24 +489,59 @@ class Client ():
 
 
     '''
+    Analyse if echoes are valid.
+    param: echoes - Servers' echoes
+    param: value - Value signed
+    param: timestamp - Timestamp signed
+    return: (Array) Valid echoes.
+    '''
+    def analyseEchoes(self, echoes, value, timestamp):
+        validEchoes = []
+        for (server_id, data_signature) in echoes:
+            if Signature.verifySign(Signature.getPublicKey(server_id, -1), data_signature, value + str(timestamp)):
+                validEchoes.append((server_id, data_signature))
+
+        return validEchoes
+
+    '''
     Gets the highest timestamp from an array containing various timestamps.
     param: response - Servers' responses
-    return: (int) Highest timestamp founded
+    return: (int) Highest timestamp founded. -1 if error.
     '''
     def analyseTimestampResponse(self, responses):
-        timestamp = -1
-        repeatTimes = 0
-
+        array = []
         for rTimestamp in responses:
-            if (rTimestamp == timestamp):
-                repeatTimes = repeatTimes + 1
+            self.addTimestampOnArray(rTimestamp, array)
 
-            elif (rTimestamp > timestamp):
-                timestamp = rTimestamp
-                repeatTimes = 1
+        return self.getLastestTimestamp(array)
 
-            else:
-                pass
+
+    '''
+    Adds a timestamp on an array. If timestamp already there, increments value.
+    param: timestamp - Timestamp to be added.
+    param: array - Array to add timestamp. Contains tuples (timestamp, repeatTimes)
+    '''
+    def addTimestampOnArray(self, timestamp, array):
+        wasAdded = False
+        for (tStamp, repeatTimes) in array:
+            if (tStamp == timestamp):
+                repeatTimes = repeatTimes+1
+                wasAdded = True
+
+        if (not wasAdded):
+            array.append((timestamp, 1))
+
+
+    '''
+    Returns the lastest timestamp that. (that occurs in b + 1 responses)
+    param: array - Array to add timestamp. Contains tuples (timestamp, repeatTimes)
+    :return: (int) Highest timestamp founded. -1 if error.
+    '''
+    def getLastestTimestamp(self, array):
+        timestamp = -1
+        for (tStamp, repeatTimes) in array:
+            if (tStamp > timestamp and repeatTimes >= self.FAULTS + 1):
+                timestamp = tStamp
 
         return timestamp
 

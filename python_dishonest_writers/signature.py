@@ -16,7 +16,6 @@ class Signature():
     '''
     @staticmethod
     def getPrivateKey(server, client):
-        filePath = ''
         if server != -1:
             filePath = "server" + str(server) + "_private.pem"
         else:
@@ -32,7 +31,6 @@ class Signature():
     '''
     @staticmethod
     def getPublicKey(server, client):
-        filePath = ''
         if server != -1:
             filePath = "server" + str(server) + "_public.pem"
         else:

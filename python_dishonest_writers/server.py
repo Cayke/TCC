@@ -2,6 +2,7 @@ import socket
 import threading
 import json
 import Define
+from signature import Signature
 
 
 class Server(object):
@@ -9,10 +10,14 @@ class Server(object):
     PORT = -1
     ID = -1
 
+    FAULTS = 1  # number of faults system can handle
+    QUORUM = 2 * FAULTS + 1
+
     VARIABLE = ''
     TIMESTAMP = -1
-    DATA_SIGNATURE = ''
     CLIENT_ID = -1
+
+    LAST_ECHOED_VALUES = [] #contem uma tupla (timestamp,value)
 
     LOCK = threading.Lock();
 
@@ -42,8 +47,6 @@ class Server(object):
         while True:
             con, client = socketTCP.accept()
             threading.Thread(target=self.clientConnected, args=[con]).start()
-
-        socketTCP.close()
 
     '''
     Waits for client's message.
@@ -84,6 +87,9 @@ class Server(object):
             elif type == Define.read_timestamp:
                 self.readTimestamp(request, socketTCP)
 
+            elif type == Define.get_echoe:
+                self.getEchoe(request, socketTCP)
+
             elif type == Define.bye:
                 socketTCP.close()
                 print('cliente desconectou propositalmente')
@@ -107,30 +113,40 @@ class Server(object):
     def write(self, request, socketTCP):
         variable = request[Define.variable]
         timestamp = request[Define.timestamp]
-        signature = request[Define.data_signature]
         client_id = request[Define.client_id]
+
+        echoesArray = request[Define.echoes]
+        echoes = []
+        for dictionary in echoesArray:
+            echoes.append((dictionary[Define.server_id], dictionary[Define.data_signature]))
 
         self.LOCK.acquire()
         if timestamp > self.TIMESTAMP:
+            if self.isEchoValid(echoes, variable, timestamp):
+                print("Recebido variable = " + variable + " e timestamp " + str(timestamp))
 
-            print("Recebido variable = " + variable + " e timestamp " + str(timestamp))
+                self.VARIABLE = variable
+                self.TIMESTAMP = timestamp
+                self.CLIENT_ID = client_id
 
-            self.VARIABLE = variable
-            self.TIMESTAMP = timestamp
-            self.DATA_SIGNATURE = signature
-            self.CLIENT_ID = client_id
+                response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.success, msg = Define.variable_updated)
+                responseJSON = json.dumps(response)
+                self.LOCK.release()
 
-            response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.success, msg = Define.variable_updated)
-            responseJSON = json.dumps(response)
-            self.LOCK.release()
+                socketTCP.send(responseJSON.encode('utf-8'))
 
-            socketTCP.send(responseJSON.encode('utf-8'))
+            else:
+                response = dict(server_id=self.ID, plataform=Define.plataform, request_code=request[Define.request_code], status=Define.error, msg=Define.invalid_echoes)
+                responseJSON = json.dumps(response)
+                self.LOCK.release()
+
+                socketTCP.send(responseJSON.encode('utf-8'))
 
         else:
-            self.LOCK.release()
-
             response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.error, msg = Define.outdated_timestamp)
             responseJSON = json.dumps(response)
+            self.LOCK.release()
+
             socketTCP.send(responseJSON.encode('utf-8'))
 
     '''
@@ -140,7 +156,7 @@ class Server(object):
     '''
     def read(self, request, socketTCP):
         with self.LOCK:
-            dataDict = dict(variable = self.VARIABLE, timestamp = self.TIMESTAMP, data_signature = self.DATA_SIGNATURE, client_id = self.CLIENT_ID)
+            dataDict = dict(variable = self.VARIABLE, timestamp = self.TIMESTAMP, client_id = self.CLIENT_ID)
             response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.success, msg = Define.read, data = dataDict)
             responseJSON = json.dumps(response)
 
@@ -158,3 +174,64 @@ class Server(object):
             responseJSON = json.dumps(response)
 
         socketTCP.send(responseJSON.encode('utf-8'))
+
+
+    '''
+    Sends timestamp in register for client.
+    param: request - A dictionary with client's request data.
+    param: socketTCP - Socket that has been created for the pair (Server, Client)
+    '''
+    def getEchoe(self, request, socketTCP):
+        variable = request[Define.variable]
+        timestamp = request[Define.timestamp]
+
+        if timestamp < self.TIMESTAMP:
+            with self.LOCK:
+                response = dict(server_id=self.ID, plataform=Define.plataform, request_code=request[Define.request_code], status=Define.error, msg=Define.outdated_timestamp)
+                responseJSON = json.dumps(response)
+
+        elif not self.shouldEcho(variable, timestamp):
+            with self.LOCK:
+                response = dict(server_id=self.ID, plataform=Define.plataform, request_code=request[Define.request_code], status=Define.error, msg=Define.timestamp_already_echoed)
+                responseJSON = json.dumps(response)
+
+        else:
+            data_signature = Signature.signData(Signature.getPrivateKey(self.ID, -1), variable + str(timestamp))
+
+            with self.LOCK:
+                dataDict = dict(data_signature = data_signature)
+                response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.success, msg = Define.get_echoe, data = dataDict)
+                responseJSON = json.dumps(response)
+
+        socketTCP.send(responseJSON.encode('utf-8'))
+
+
+    '''
+    Check if value was echoed before
+    param: value - Variable to sign.
+    param: timestamp - Timestamp.
+    return: (bool) If server should echo value and timestamp
+    '''
+    def shouldEcho(self, value, timestamp):
+        for (auxTimestamp, auxValue) in self.LAST_ECHOED_VALUES:
+            if timestamp == auxTimestamp and value != auxValue:
+                return False
+            elif timestamp == auxTimestamp and value == auxValue:
+                return True
+
+        return True
+
+    '''
+    Check if value was echoed before
+    param: echoes - Array with tuples(server_id, data_signature)
+    param: value - Variable to sign.
+    param: timestamp - Timestamp.
+    return: (bool) If echoes are valid
+    '''
+    def isEchoValid(self, echoes, value, timestamp):
+        validEchoes = 0
+        for (server_id, data_signature) in echoes:
+            if Signature.verifySign(Signature.getPublicKey(server_id, -1), data_signature, value + str(timestamp)):
+                validEchoes = validEchoes + 1
+
+        return validEchoes >= self.QUORUM

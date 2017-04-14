@@ -1,3 +1,4 @@
 from server import Server
 
-Server(0, 'localhost', 5000)
+id = 3
+Server(id, 'localhost', 5000 + id)
