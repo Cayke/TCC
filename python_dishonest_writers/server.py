@@ -14,8 +14,8 @@ class Server(object):
     QUORUM = 2 * FAULTS + 1
 
     VARIABLE = ''
+    DATA_SIGNATURE = ''
     TIMESTAMP = -1
-    CLIENT_ID = -1
 
     LAST_ECHOED_VALUES = [] #contem uma tupla (timestamp,value)
 
@@ -113,7 +113,6 @@ class Server(object):
     def write(self, request, socketTCP):
         variable = request[Define.variable]
         timestamp = request[Define.timestamp]
-        client_id = request[Define.client_id]
 
         echoesArray = request[Define.echoes]
         echoes = []
@@ -127,7 +126,7 @@ class Server(object):
 
                 self.VARIABLE = variable
                 self.TIMESTAMP = timestamp
-                self.CLIENT_ID = client_id
+                self.DATA_SIGNATURE = Signature.signData(Signature.getPrivateKey(self.ID, -1), variable + str(timestamp))
 
                 response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.success, msg = Define.variable_updated)
                 responseJSON = json.dumps(response)
@@ -156,7 +155,7 @@ class Server(object):
     '''
     def read(self, request, socketTCP):
         with self.LOCK:
-            dataDict = dict(variable = self.VARIABLE, timestamp = self.TIMESTAMP, client_id = self.CLIENT_ID)
+            dataDict = dict(variable = self.VARIABLE, timestamp = self.TIMESTAMP, data_signature = self.DATA_SIGNATURE)
             response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.success, msg = Define.read, data = dataDict)
             responseJSON = json.dumps(response)
 

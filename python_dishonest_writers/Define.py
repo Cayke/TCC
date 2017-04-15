@@ -17,6 +17,7 @@ type = 'type'
 read = 'read'
 read_timestamp = 'read_timestamp'
 write = 'write'
+write_back = 'write_back'
 get_echoe = "get_echoe"
 variable = 'variable'
 timestamp = 'timestamp'

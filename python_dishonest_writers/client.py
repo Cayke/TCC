@@ -15,7 +15,7 @@ class Client ():
 
     LOCK = threading.Lock()
     REQUEST_CODE = 0
-    RESPONSES = [] # armazena tuplas (value, timestamp, data_signature, client_id, server)
+    RESPONSES = [] # armazena tuplas (value, timestamp, data_signature, server_id, server)
     ECHOES = [] # armazena as assinaturas dos servidores (server_id, data_signature)
     OUT_DATED_SERVERS = []
 
@@ -92,7 +92,7 @@ class Client ():
 
         if (echoes is not None):
             for server in self.SERVERS:
-                threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, echoes, self.ID, self.REQUEST_CODE)).start()
+                threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, echoes, self.REQUEST_CODE, Define.write)).start()
 
             self.REQUEST_CODE = self.REQUEST_CODE + 1
 
@@ -206,15 +206,21 @@ class Client ():
                 self.REQUEST_CODE = self.REQUEST_CODE + 1
 
             if (len(self.RESPONSES) >= self.QUORUM):
-                value, timestamp, data_signature, client_id = self.analyseResponse(self.RESPONSES)
+                result = self.analyseResponse(self.RESPONSES)
 
-                self.writeBack(value, timestamp, data_signature, client_id)
+                if result is not None:
+                    value, timestamp, echoes = result
+                    self.writeBack(value, timestamp, echoes)
 
-                data = RepresentedData(value)
-                with self.LOCK_PRINT:
-                    print('Li o dado do server:')
-                    data.showInfo()
-                    print ("Timestamp: " + str(timestamp))
+                    data = RepresentedData(value)
+                    with self.LOCK_PRINT:
+                        print('Li o dado do server:')
+                        data.showInfo()
+                        print ("Timestamp: " + str(timestamp))
+
+                else:
+                    with self.LOCK_PRINT:
+                        print("Nao foi possivel ler nenhum dado. Chegou o quorum de mensagens mas nao havia b+1 iguais.")
 
             else:
                 with self.LOCK_PRINT:
@@ -230,12 +236,11 @@ class Client ():
     param: value - Value to be written in servers (dictionary from RepresentedData class)
     param: timestamp - Timestamp from value
     param: data_signature - Signature from value+timestamp
-    param: client_id - ID from client that written the value
     '''
-    def writeBack(self, value, timestamp, data_signature, client_id):
+    def writeBack(self, value, timestamp, echoes,):
         for server in self.OUT_DATED_SERVERS:
-            if timestamp != -1 and client_id != -1:
-                threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, data_signature, client_id, self.REQUEST_CODE)).start()
+            if timestamp != -1:
+                threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, echoes, self.REQUEST_CODE, Define.write_back)).start()
 
         self.REQUEST_CODE = self.REQUEST_CODE + 1
 
@@ -246,15 +251,14 @@ class Client ():
     param: value - Value to be written
     param: timestamp - Timestamp from value
     param: echos - Signatures for value+timestamp from servers
-    param: client_id - Id from the client that created the value
     param: request_code - Request ID identifier
     '''
-    def writeOnServer(self, server, value, timestamp, echoes, client_id, request_code):
+    def writeOnServer(self, server, value, timestamp, echoes, request_code, type):
             echoesArray = []
             for (server_id, signature) in echoes:
                 echoesArray.append(dict(server_id = server_id, data_signature = signature))
 
-            request = dict(type=Define.write, timestamp=timestamp, variable=value, request_code = request_code, client_id = client_id, echoes = echoesArray)
+            request = dict(type=type, timestamp=timestamp, variable=value, request_code = request_code, echoes = echoesArray)
             requestJSON = json.dumps(request)
 
             TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -284,14 +288,14 @@ class Client ():
             serverTimestamp = data[Define.timestamp]
             serverVariable = data[Define.variable]
             dataSignature = data[Define.data_signature]
-            clientID = data[Define.client_id]
+            serverID = messageFromServer[Define.server_id]
 
             with self.LOCK:
                 if len(self.RESPONSES) < self.QUORUM-1:
-                    self.RESPONSES.append((serverVariable, serverTimestamp, dataSignature, clientID, server))
+                    self.RESPONSES.append((serverVariable, serverTimestamp, dataSignature, serverID, server))
 
                 elif len(self.RESPONSES) == self.QUORUM-1:
-                    self.RESPONSES.append((serverVariable, serverTimestamp, dataSignature, clientID, server))
+                    self.RESPONSES.append((serverVariable, serverTimestamp, dataSignature, serverID, server))
                     self.SEMAPHORE.release()
 
                 else:
@@ -382,7 +386,7 @@ class Client ():
     param: request_code - Request ID identifier
     '''
     def getValueFromServer(self, server, request_code):
-        request = dict(type=Define.read, request_code =request_code, client_id = self.ID)
+        request = dict(type=Define.read, request_code =request_code)
         requestJSON = json.dumps(request)
         TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TCPSocket.connect(server)
@@ -399,7 +403,7 @@ class Client ():
     param: request_code - Request ID identifier
     '''
     def getTimestampFromServer(self, server, request_code):
-        request = dict(type=Define.read_timestamp, request_code=request_code, client_id=self.ID)
+        request = dict(type=Define.read_timestamp, request_code=request_code)
         requestJSON = json.dumps(request)
         TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TCPSocket.connect(server)
@@ -418,7 +422,7 @@ class Client ():
     param: timestamp - Timestamp from value
     '''
     def getEchoeFromServer(self, server, request_code, value, timestamp):
-        request = dict(type=Define.get_echoe, request_code=request_code, client_id=self.ID, variable = value, timestamp = timestamp)
+        request = dict(type=Define.get_echoe, request_code=request_code, variable = value, timestamp = timestamp)
         requestJSON = json.dumps(request)
         TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TCPSocket.connect(server)
@@ -446,46 +450,67 @@ class Client ():
 
 
     '''
-    Gets the data with the highest timestamp. Maps the outdated servers too.
+    Gets the data with the highest timestamp in b+1 servers. Maps the outdated servers too.
     param: response - Servers' responses
-    return: (tuple) Tuple with the actual data (value, timestamp, signature, writter_id)
+    return: (tuple) Tuple with the actual data (value, timestamp, [echoes]). None if error.
     '''
     def analyseResponse(self, responses):
-        value = ''
-        timestamp = -1
-        repeatTimes = 0
-        auxServers = []
-        data_signature = ''
-        client_id = -1
+        array = []
 
-        for (rValue, rTimestamp, data_sign, r_client_id, server) in responses:
-            if rTimestamp == -1 or r_client_id == -1:
+        for (rValue, rTimestamp, data_sign, server_id, server) in responses:
+            if rTimestamp == -1:
                 #nao ha dado escrito no servidor
                 self.OUT_DATED_SERVERS.append(server)
-
             else:
-                if Signature.verifySign(Signature.getPublicKey(-1, r_client_id), data_sign, rValue + str(rTimestamp)):
-                    if (rTimestamp == timestamp):
-                        repeatTimes = repeatTimes + 1
-                        auxServers.append(server)
-
-                    elif (rTimestamp > timestamp):
-                        timestamp = rTimestamp
-                        repeatTimes = 1
-                        value = rValue
-                        data_signature = data_sign
-                        client_id = r_client_id
-                        self.transferObjects(auxServers, self.OUT_DATED_SERVERS)
-                        auxServers.append(server)
-
-                    else:
-                        self.OUT_DATED_SERVERS.append(server)
-
+                if Signature.verifySign(Signature.getPublicKey(server_id, -1), data_sign, rValue + str(rTimestamp)):
+                    self.addResponseToArrayWithRepeatTimes(array, rValue, rTimestamp, data_sign, server_id, server)
                 else:
                     # assinatura invalida
                     self.OUT_DATED_SERVERS.append(server)
 
-        return (value, timestamp, data_signature, client_id)
+        return self.getValidResponse(array)
+
+
+    '''
+    Adds a response on an array. If value+timestamp already there, increments value.
+    param: array - Array to add timestamp. Contains tuples (repeatTimes, value, timestamp, [(server_id, data_sign)], [server])
+    param: value - Value to be added.
+    param: timestamp - Timestamp to be added.
+    param: data_sign - Data signature.
+    param: server_id - Id of the server
+    param: server - Server ip and port
+    '''
+    def addResponseToArrayWithRepeatTimes(self, array, value, timestamp, data_sign, server_id, server):
+        wasAdded = False
+        for x in range(0,len(array)):
+            repeatTimes, tValue, tTimestamp, echoes, servers = array[x]
+            if (tTimestamp == timestamp and tValue == value):
+                repeatTimes += 1
+                echoes.append((server_id, data_sign))
+                servers.append(server)
+                array[x] = (repeatTimes, tValue, tTimestamp, echoes, servers)
+                wasAdded = True
+
+        if (not wasAdded):
+            array.append((1, value, timestamp, [(server_id, data_sign)], [server]))
+
+
+    '''
+    Gets the valid response from an array containing various responses.
+    param: response - Servers' responses. Tuple (repeatTimes, value, timestamp, [(server_id, data_sign)], [server])
+    return: (tuple - (value, timestamp, [echoes])) Valid response founded. None if error.
+    '''
+    def getValidResponse(self, responses):
+        tuple = None
+
+        for (repeatTimes, tValue, tTimestamp, echoes, servers) in responses:
+            if repeatTimes >= self.FAULTS + 1:
+                tuple = (tValue, tTimestamp,echoes)
+            else:
+                for server in servers:
+                    self.OUT_DATED_SERVERS.append(server)
+
+        return tuple
 
 
     '''
@@ -523,9 +548,11 @@ class Client ():
     '''
     def addTimestampOnArray(self, timestamp, array):
         wasAdded = False
-        for (tStamp, repeatTimes) in array:
+        for x in range(0, len(array)):
+            tStamp, repeatTimes = array[x]
             if (tStamp == timestamp):
-                repeatTimes = repeatTimes+1
+                repeatTimes += 1
+                array[x] = (tStamp, repeatTimes)
                 wasAdded = True
 
         if (not wasAdded):
