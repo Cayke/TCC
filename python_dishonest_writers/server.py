@@ -79,7 +79,10 @@ class Server(object):
             type = request[Define.type]
 
             if type == Define.write:
-                self.write(request,socketTCP)
+                self.write(request,socketTCP, type)
+
+            if type == Define.write_back:
+                self.write(request,socketTCP, type)
 
             elif type == Define.read:
                 self.read(request,socketTCP)
@@ -110,7 +113,7 @@ class Server(object):
     param: request - A dictionary with client's request data.
     param: socketTCP - Socket that has been created for the pair (Server, Client)
     '''
-    def write(self, request, socketTCP):
+    def write(self, request, socketTCP, type):
         variable = request[Define.variable]
         timestamp = request[Define.timestamp]
 
@@ -121,7 +124,7 @@ class Server(object):
 
         self.LOCK.acquire()
         if timestamp > self.TIMESTAMP:
-            if self.isEchoValid(echoes, variable, timestamp):
+            if self.isEchoValid(echoes, variable, timestamp, type):
                 print("Recebido variable = " + variable + " e timestamp " + str(timestamp))
 
                 self.VARIABLE = variable
@@ -225,12 +228,16 @@ class Server(object):
     param: echoes - Array with tuples(server_id, data_signature)
     param: value - Variable to sign.
     param: timestamp - Timestamp.
+    param: type - If is a write or write_back
     return: (bool) If echoes are valid
     '''
-    def isEchoValid(self, echoes, value, timestamp):
+    def isEchoValid(self, echoes, value, timestamp, type):
         validEchoes = 0
         for (server_id, data_signature) in echoes:
             if Signature.verifySign(Signature.getPublicKey(server_id, -1), data_signature, value + str(timestamp)):
                 validEchoes = validEchoes + 1
 
-        return validEchoes >= self.QUORUM
+        if type == Define.write :
+            return validEchoes >= self.QUORUM
+        else: #write_back
+            return validEchoes >= self.FAULTS + 1
