@@ -1,14 +1,19 @@
 package com.caykeprudente;
 
 import com.google.gson.GsonBuilder;
+import com.google.gson.internal.LinkedTreeMap;
+import com.sun.tools.javac.util.Pair;
 import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.security.Signature;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by cayke on 11/11/16.
@@ -92,14 +97,17 @@ public class ServerHandler implements Runnable {
     */
     private boolean getRequestStatus(HashMap<String, Object> request) {
         String type = (String) request.get(Define.type);
-        if (type.equals(Define.write))
-            return write(request);
+        if (type.equals(Define.write) || type.equals(Define.write_back))
+            return write(request, type);
 
         else if (type.equals(Define.read))
             return read(request);
 
         else if (type.equals(Define.read_timestamp))
             return readTimestamp(request);
+
+        else if (type.equals(Define.get_echoe))
+            return getEchoe(request);
 
         else if (type.equals(Define.bye)) {
             try {
@@ -110,7 +118,7 @@ public class ServerHandler implements Runnable {
             return true;
         } else {
             HashMap<String, Object> dictionary = new HashMap<String, Object>();
-            dictionary.put(Define.server_id, server.id);
+            dictionary.put(Define.server_id, server.id.intValue());
             dictionary.put("plataform", Define.plataform);
             dictionary.put(Define.request_code, request.get(Define.request_code));
             dictionary.put(Define.status, Define.error);
@@ -149,9 +157,8 @@ public class ServerHandler implements Runnable {
             dataDict.put(Define.variable, server.variable);
             dataDict.put(Define.timestamp, server.timestamp);
             dataDict.put(Define.data_signature, server.data_signature);
-            dataDict.put(Define.client_id, server.client_id);
 
-            response.put(Define.server_id, server.id);
+            response.put(Define.server_id, server.id.intValue());
             response.put("plataform", Define.plataform);
             response.put(Define.request_code, request.get(Define.request_code));
             response.put(Define.status, Define.success);
@@ -182,7 +189,7 @@ public class ServerHandler implements Runnable {
             HashMap<String, Object> dataDict = new HashMap<String, Object>();
             dataDict.put(Define.timestamp, server.timestamp);
 
-            response.put(Define.server_id, server.id);
+            response.put(Define.server_id, server.id.intValue());
             response.put("plataform", Define.plataform);
             response.put(Define.request_code, request.get(Define.request_code));
             response.put(Define.status, Define.success);
@@ -206,36 +213,59 @@ public class ServerHandler implements Runnable {
     Write data in register if the requirements are followed.
     param: request - A dictionary with client's request data.
     */
-    private boolean write(HashMap request) {
+    private boolean write(HashMap request, String type) {
         String variable = (String)request.get(Define.variable);
         int timestamp = ((Double) request.get(Define.timestamp)).intValue();
-        String data_signature = (String) request.get(Define.data_signature);
-        int client_id = ((Double) request.get(Define.client_id)).intValue();
+
+        List<LinkedTreeMap<String, Object>> echoesArray = (List<LinkedTreeMap<String, Object>>) request.get(Define.echoes);
+        List<Pair<Double, String>> echoes = new ArrayList<Pair<Double, String>>();
+        for (LinkedTreeMap<String, Object> dict : echoesArray) {
+            echoes.add(new Pair<Double, String>((Double) dict.get(Define.server_id), (String) dict.get(Define.data_signature)));
+        }
 
         server.lock.lock();
         if (timestamp > server.timestamp)
         {
-            System.out.println("Recebido variable = " + variable + " e timestamp " + timestamp);
+            if (isEchoValid(echoes, variable, timestamp, type)) {
+                System.out.println("Recebido variable = " + variable + " e timestamp " + timestamp);
 
-            server.variable = variable;
-            server.timestamp = timestamp;
-            server.data_signature = data_signature;
-            server.client_id = client_id;
+                server.variable = variable;
+                server.timestamp = timestamp;
+                server.data_signature = MySignature.signData(MySignature.getPrivateKey(server.id, -1d), variable+timestamp);
+                server.last_echoed_values = new ArrayList<Pair<Integer, String>>();
 
-            HashMap<String, Object> response = new HashMap<String, Object>();
-            response.put(Define.server_id, server.id);
-            response.put("plataform", Define.plataform);
-            response.put(Define.request_code, request.get(Define.request_code));
-            response.put(Define.status, Define.success);
-            response.put(Define.msg, Define.variable_updated);
+                HashMap<String, Object> response = new HashMap<String, Object>();
+                response.put(Define.server_id, server.id.intValue());
+                response.put("plataform", Define.plataform);
+                response.put(Define.request_code, request.get(Define.request_code));
+                response.put(Define.status, Define.success);
+                response.put(Define.msg, Define.variable_updated);
 
-            server.lock.unlock();
+                server.lock.unlock();
 
-            try {
-                sendMessageToClient(response);
-                return true;
-            } catch (IOException e) {
-                return false;
+                try {
+                    sendMessageToClient(response);
+                    return true;
+                } catch (IOException e) {
+                    return false;
+                }
+            }
+            else {
+                HashMap<String, Object> response = new HashMap<String, Object>();
+                response.put(Define.server_id, server.id.intValue());
+                response.put("plataform", Define.plataform);
+                response.put(Define.request_code, request.get(Define.request_code));
+                response.put(Define.status, Define.error);
+                response.put(Define.msg, Define.invalid_echoes);
+
+                server.lock.unlock();
+
+                try {
+                    sendMessageToClient(response);
+                    return true;
+                } catch (IOException e) {
+                    return false;
+                }
             }
         }
         else
@@ -243,7 +273,7 @@ public class ServerHandler implements Runnable {
             server.lock.unlock();
 
             HashMap<String, Object> response = new HashMap<String, Object>();
-            response.put(Define.server_id, server.id);
+            response.put(Define.server_id, server.id.intValue());
             response.put("plataform", Define.plataform);
             response.put(Define.request_code, request.get(Define.request_code));
             response.put(Define.status, Define.error);
@@ -256,5 +286,93 @@ public class ServerHandler implements Runnable {
                 return false;
             }
         }
+    }
+
+
+    /*
+    Sends echo for timestamp and value
+    param: request - A dictionary with client's request data.
+    */
+    public boolean getEchoe(HashMap request) {
+        String variable = (String)request.get(Define.variable);
+        int timestamp = ((Double) request.get(Define.timestamp)).intValue();
+
+        HashMap<String, Object> response = new HashMap<String, Object>();
+        if (timestamp < server.timestamp) {
+            response.put(Define.server_id, server.id.intValue());
+            response.put("plataform", Define.plataform);
+            response.put(Define.request_code, request.get(Define.request_code));
+            response.put(Define.status, Define.error);
+            response.put(Define.msg, Define.outdated_timestamp);
+        }
+        else if (!shouldEcho(variable, timestamp)) {
+            response.put(Define.server_id, server.id.intValue());
+            response.put("plataform", Define.plataform);
+            response.put(Define.request_code, request.get(Define.request_code));
+            response.put(Define.status, Define.error);
+            response.put(Define.msg, Define.timestamp_already_echoed);
+        }
+        else {
+            String data_signature = MySignature.signData(MySignature.getPrivateKey(server.id, -1d), variable+timestamp);
+
+            server.lock.lock();
+            HashMap<String, Object> dataDict = new HashMap<String, Object>();
+            dataDict.put(Define.data_signature, data_signature);
+
+            response.put(Define.server_id, server.id.intValue());
+            response.put("plataform", Define.plataform);
+            response.put(Define.request_code, request.get(Define.request_code));
+            response.put(Define.status, Define.success);
+            response.put(Define.msg, Define.read);
+            response.put(Define.data, dataDict);
+            server.lock.unlock();
+        }
+
+        try {
+            sendMessageToClient(response);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+
+    /*
+    Check if value was echoed before
+    param: value - Variable to sign.
+    param: timestamp - Timestamp.
+    return: (bool) If server should echo value and timestamp
+     */
+    public boolean shouldEcho(String value, int timestamp) {
+        for (Pair<Integer, String> pair : server.last_echoed_values) {
+            if (pair.fst == timestamp && !pair.snd.equals(value))
+                return false;
+            else if (pair.fst == timestamp && pair.snd.equals(value))
+                return true;
+        }
+        return true;
+    }
+
+
+    /*
+    Check if echoes are valid
+    param: echoes - Array with tuples(server_id, data_signature)
+    param: value - Variable to sign.
+    param: timestamp - Timestamp.
+    param: type - If is a write or write_back
+    return: (bool) If echoes are valid
+     */
+    public boolean isEchoValid(List<Pair<Double, String>> echoes, String value, int timestamp, String type) {
+        int validEchoes = 0;
+        for (Pair<Double, String> echo: echoes) {
+            if (MySignature.verifySign(MySignature.getPublicKey(echo.fst, -1d), echo.snd, value+timestamp))
+                validEchoes++;
+        }
+
+        if (type.equals(Define.write))
+            return validEchoes >= server.quorum;
+        else //write_back
+            return validEchoes >= server.faults + 1;
+
     }
 }

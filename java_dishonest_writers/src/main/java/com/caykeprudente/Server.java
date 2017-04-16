@@ -1,8 +1,12 @@
 package com.caykeprudente;
 
+import com.sun.tools.javac.util.Pair;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -13,12 +17,16 @@ public class Server
 {
     public String host = "";
     public int port = -1;
-    public int id = -1;
+    public Double id = -1d;
+
+    public int faults = 1; //number of faults system can handle
+    public int quorum = 2*faults + 1;
 
     public String variable = "";
     public int timestamp = -1;
     public String data_signature = "";
-    public int client_id = -1;
+
+    public List<Pair<Integer, String>> last_echoed_values = new ArrayList<Pair<Integer, String>>();
 
     Lock lock = new ReentrantLock();
 
@@ -28,7 +36,7 @@ public class Server
     param: ip - Server ip
     param: port - Server port
     */
-    public Server (int id, String ip, int port)
+    public Server (Double id, String ip, int port)
     {
         this.host = ip;
         this.id = id;

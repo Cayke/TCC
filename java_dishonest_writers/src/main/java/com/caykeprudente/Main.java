@@ -10,14 +10,15 @@ public class Main {
 
     public static void main(String[] args) {
 	    // write your code here
-        runClient();
+        runServer(0d);
     }
 
-    private static void runServer() {
-        Server server = new Server(0, "localhost", 5000);
+    private static void runServer(Double id) {
+        Server server = new Server(id, "localhost", 5000 + id.intValue());
         try {
             server.waitForConnection();
         } catch (IOException e) {
+            e.printStackTrace();
             System.out.println("Deu ruim na main");
         }
     }
