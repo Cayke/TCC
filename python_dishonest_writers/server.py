@@ -130,6 +130,7 @@ class Server(object):
                 self.VARIABLE = variable
                 self.TIMESTAMP = timestamp
                 self.DATA_SIGNATURE = Signature.signData(Signature.getPrivateKey(self.ID, -1), variable + str(timestamp))
+                self.LAST_ECHOED_VALUES = []
 
                 response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.success, msg = Define.variable_updated)
                 responseJSON = json.dumps(response)
@@ -179,7 +180,7 @@ class Server(object):
 
 
     '''
-    Sends timestamp in register for client.
+    Sends echo for timestamp and value
     param: request - A dictionary with client's request data.
     param: socketTCP - Socket that has been created for the pair (Server, Client)
     '''
@@ -224,7 +225,7 @@ class Server(object):
         return True
 
     '''
-    Check if value was echoed before
+    Check if echoes are valid
     param: echoes - Array with tuples(server_id, data_signature)
     param: value - Variable to sign.
     param: timestamp - Timestamp.
