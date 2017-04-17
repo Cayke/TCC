@@ -50,7 +50,7 @@ public class Define {
     public static final String unknown_error = "unknown_error";
     public static final String outdated_timestamp = "outdated_timestamp";
     public static final String invalid_signature = "invalid_signature";
-    public static final String timestamp_already_echoed = "intimestamp_already_echoedvalid_signature";
+    public static final String timestamp_already_echoed = "timestamp_already_echoed";
     public static final String invalid_echoes = "invalid_echoes";
 
     /*
