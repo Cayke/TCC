@@ -10,7 +10,8 @@ public class Main {
 
     public static void main(String[] args) {
 	    // write your code here
-        runServer(0d);
+        //runServer(0d);
+        runClient();
     }
 
     private static void runServer(Double id) {
@@ -28,6 +29,7 @@ public class Main {
         servers.add(new Pair<String, Integer>("localhost", 5000));
         servers.add(new Pair<String, Integer>("localhost", 5001));
         servers.add(new Pair<String, Integer>("localhost", 5002));
-        new Client(0d, servers);
+        servers.add(new Pair<String, Integer>("localhost", 5003));
+        new Client(servers);
     }
 }

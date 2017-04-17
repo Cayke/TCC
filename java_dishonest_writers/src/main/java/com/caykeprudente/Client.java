@@ -2,6 +2,7 @@ package com.caykeprudente;
 
 import com.sun.tools.javac.util.Pair;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.Semaphore;
@@ -14,15 +15,17 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class Client {
     List<Pair<String, Integer>> servers; // contains a tuple of (ip,port)
-    int quorum = 2;
 
-    Double id = -1d; // id do client. serve para identificar qual chave usar no RSA
+    int faults = 1; //number of faults system can handle
+    int quorum = 2*faults + 1;
+
 
     Lock lock = new ReentrantLock();
 
     private Double request_code = 0d;
 
     List<ResponseData> responses;
+    List<Pair<Integer, String>> echoes; //armazena as assinaturas dos servidores (server_id, data_signature)
     List<Pair<String, Integer>> out_dated_servers;
 
     Semaphore semaphore = new Semaphore(0);
@@ -37,11 +40,10 @@ public class Client {
     param: id - Client id
     param: servers - Array with servers(ip+port)
     */
-    public Client(Double id, List<Pair<String, Integer>> servers) {
-        this.id = id;
+    public Client(List<Pair<String, Integer>> servers) {
         this.servers = servers;
 
-        System.out.println("Client " + Define.plataform + " " + id + "running....");
+        System.out.println("Client " + Define.plataform + " running....");
 
         initUserInterface();
     }
@@ -103,17 +105,23 @@ public class Client {
     private void write(String value) {
         Double timestamp = readTimestamp();
         timestamp = incrementTimestamp(timestamp);
+        List<Pair<Integer, String>> echoes = getEchoes(value, timestamp);
 
-        String dataSignature = MySignature.signData(MySignature.getPrivateKey(-1d, id), value+timestamp.intValue());
+        if (echoes != null) {
+            for (Pair<String, Integer> server : servers) {
+                ResponseData data = new ResponseData(value, timestamp, null, null, request_code, server, echoes);
+                ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write, data);
+                Thread thread = new Thread(handler);
+                thread.start();
+            }
 
-        for (Pair<String, Integer> server : servers) {
-            ResponseData data = new ResponseData(value, timestamp, dataSignature, id, request_code, server);
-            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write, data);
-            Thread thread = new Thread(handler);
-            thread.start();
+            request_code++;
         }
-
-        request_code++;
+        else {
+            lock_print.lock();
+            System.out.println("Nao foi possivel fazer a escrita");
+            lock_print.unlock();
+        }
     }
 
 
@@ -132,7 +140,7 @@ public class Client {
         lock_print.unlock();
 
         for (Pair<String, Integer> server : servers) {
-            ResponseData data = new ResponseData(null, 0d, null, id, request_code, server);
+            ResponseData data = new ResponseData(null, 0d, null, 0d, request_code, server, null);
             ClientHandler handler = new ClientHandler(this, ClientHandler.Function.readTimestamp, data);
             Thread thread = new Thread(handler);
             thread.start();
@@ -189,7 +197,7 @@ public class Client {
         lock_print.unlock();
 
         for (Pair<String, Integer> server : servers) {
-            ResponseData data = new ResponseData(null, 0d, null, id, request_code, server);
+            ResponseData data = new ResponseData(null, 0d, null, 0d, request_code, server, null);
             ClientHandler handler = new ClientHandler(this, ClientHandler.Function.read, data);
             Thread thread = new Thread(handler);
             thread.start();
@@ -204,15 +212,24 @@ public class Client {
                 lock.unlock();
 
                 if (responses.size() >= quorum) {
-                    ResponseData mostRecentData = analyseResponse(responses);
+                    ResponseValidator mostRecentData = analyseResponse(responses);
 
-                    writeBack(mostRecentData);
+                    if (mostRecentData != null) {
+                        writeBack(mostRecentData);
 
-                    RepresentedData visibleData = new RepresentedData(mostRecentData.value);
-                    lock_print.lock();
-                    System.out.println("Li o dado do server no timestamp " + mostRecentData.timestamp + ": ");
-                    visibleData.showInfo();
-                    lock_print.unlock();
+                        RepresentedData visibleData = new RepresentedData(mostRecentData.value);
+                        lock_print.lock();
+                        System.out.println("Li o dado do server no timestamp " + mostRecentData.timestamp + ": ");
+                        visibleData.showInfo();
+                        lock_print.unlock();
+                    }
+                    else {
+                        lock_print.lock();
+                        System.out.println("Nao foi possivel ler nenhum dado. Chegou o quorum de mensagens mas nao havia b+1 iguais.");
+                        lock_print.unlock();
+                    }
+
+
                 }
                 else {
                     lock_print.lock();
@@ -235,21 +252,90 @@ public class Client {
     Writes a value readed on servers that are outdated.
     param: value - Value to be written in servers (dictionary from RepresentedData class)
     param: timestamp - Timestamp from value
-    param: data_signature - Signature from value+timestamp
-    param: client_id - ID from client that written the value
+    param: echoes - Signatures from servers - value+timestamp
     */
-    private void writeBack(ResponseData data) {
+    private void writeBack(ResponseValidator responseValidator) {
         for (Pair<String, Integer> server : out_dated_servers) {
-            if (data.timestamp != -1 && data.client_id != -1) {
-                data.server = server;
-                data.request_code = request_code;
-
-                ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write, data);
+            if (responseValidator.timestamp != -1) {
+                Double timestamp = Double.valueOf(responseValidator.timestamp);
+                ResponseData data = new ResponseData(responseValidator.value, timestamp, null, null, request_code, server, responseValidator.echoes);
+                ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write_back, data);
                 Thread thread = new Thread(handler);
                 thread.start();
             }
         }
         request_code++;
+    }
+
+
+    /*
+    Obtains echoes from servers.
+    param: value - Value to be written in servers (dictionary from RepresentedData class)
+    param: timestamp - Timestamp from value
+    return: (List) Valid echoes from server; Null if cant get.
+     */
+    private List<Pair<Integer, String>> getEchoes(String value, Double timestamp) {
+        lock.lock();
+        echoes = new ArrayList<Pair<Integer, String>>();
+        lock.unlock();
+
+        lock_print.lock();
+        System.out.println("Obtendo echos dos servidores....");
+        lock_print.unlock();
+
+        for (Pair<String, Integer> server : servers) {
+            ResponseData data = new ResponseData(value, timestamp, null, null, request_code, server, null);
+            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.readEchoeFromServer, data);
+            Thread thread = new Thread(handler);
+            thread.start();
+        }
+
+        try {
+            boolean wasReleased = semaphore.tryAcquire(Define.timeout, TimeUnit.SECONDS);
+
+            if (wasReleased) {
+                lock.lock();
+                request_code++;
+                lock.unlock();
+
+                if (echoes.size() >= quorum) {
+                    List<Pair<Integer, String>> validEchoes = analyseEchoes(echoes, value, timestamp);
+
+                    if (validEchoes.size() >= quorum) {
+                        lock_print.lock();
+                        System.out.println("Li os echos com sucesso");
+                        lock_print.unlock();
+
+                        return validEchoes;
+                    }
+                    else {
+                        lock_print.lock();
+                        System.out.println("Li os echos, mas nao deu quorum. Algum echo veio errado.");
+                        lock_print.unlock();
+
+                        return null;
+                    }
+                }
+                else {
+                    lock_print.lock();
+                    System.out.println("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.");
+                    lock_print.unlock();
+
+                    return null;
+                }
+            }
+            else {
+                lock_print.lock();
+                System.out.println("Nao foi possivel ler nenhum dado. Timeout da conexao expirado");
+                lock_print.unlock();
+
+                return null;
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+
+            return null;
+        }
     }
 
 
@@ -274,82 +360,142 @@ public class Client {
     /*
     Gets the data with the highest timestamp. Maps the outdated servers too.
     param: response - Servers' responses
-    return: (tuple) Tuple with the actual data (value, timestamp, signature, writter_id)
+    return: (tuple) Tuple with the actual data (value, timestamp, [echoes]). None if error.
     */
-    private ResponseData analyseResponse(List<ResponseData> responses) {
-        String value = "";
-        Double timestamp = -1d;
-        int repeatTimes = 0;
-        ArrayList<Pair> auxServers = new ArrayList<Pair>();
-        String data_signature = "";
-        Double client_id = -1d;
+    private ResponseValidator analyseResponse(List<ResponseData> responses) {
+        List array = new ArrayList();
 
         for (ResponseData response : responses) {
-            if (response.timestamp == -1 || response.client_id == -1) {
-                //nao ha dado escrito no servidor em questao
+            if (response.timestamp == -1)
                 out_dated_servers.add(response.server);
-            }
             else {
-                if (MySignature.verifySign(MySignature.getPublicKey(-1d, response.client_id), response.data_signature, response.value+response.timestamp.intValue())) {
-                    if (response.timestamp.equals(timestamp)) {
-                        repeatTimes = repeatTimes + 1;
-                        auxServers.add(response.server);
-                    }
-                    else if (response.timestamp > timestamp) {
-                        timestamp = response.timestamp;
-                        repeatTimes = 1;
-                        value = response.value;
-                        data_signature = response.data_signature;
-                        client_id = response.client_id;
-                        transferObject(auxServers, out_dated_servers);
-                        auxServers.add(response.server);
-                    }
-                    else
-                        out_dated_servers.add(response.server);
-                }
-                else {
+                if (MySignature.verifySign(MySignature.getPublicKey(response.server_id,-1d), response.data_signature, response.value+response.timestamp.intValue()))
+                    addResponseToArrayWithRepeatTimes(array, response);
+                else
                     out_dated_servers.add(response.server);
-                }
             }
         }
 
-        return new ResponseData(value, timestamp, data_signature, client_id, 0d, null);
+        return getValidResponse(array);
+    }
+
+
+    /*
+    Adds a response on an array. If value+timestamp already there, increments value.
+    param: array - Array to add timestamp. Contains tuples (repeatTimes, value, timestamp, [(server_id, data_sign)], [server])
+    param: value - Value to be added.
+    param: timestamp - Timestamp to be added.
+    param: data_sign - Data signature.
+    param: server_id - Id of the server
+    param: server - Server ip and port
+     */
+    private void addResponseToArrayWithRepeatTimes(List<ResponseValidator> array, ResponseData responseData) {
+        boolean wasAdded = false;
+        for (ResponseValidator validator : array) {
+            if (validator.timestamp == responseData.timestamp && validator.value.equals(responseData.value)) {
+                validator.repeatTimes++;
+                validator.echoes.add(new Pair<Integer, String>(responseData.server_id.intValue(), responseData.data_signature));
+                validator.servers.add(responseData.server);
+                wasAdded = true;
+            }
+        }
+
+        if (!wasAdded) {
+            ArrayList<Pair<Integer, String>> echoes = new ArrayList<Pair<Integer, String>>();
+            echoes.add(new Pair<Integer, String>(responseData.server_id.intValue(), responseData.data_signature));
+            ArrayList<Pair<String, Integer>> servers = new ArrayList<Pair<String, Integer>>();
+            servers.add(responseData.server);
+
+            array.add(new ResponseValidator(1, responseData.value, responseData.timestamp.intValue(), echoes, servers));
+        }
+    }
+
+
+    /*
+    Gets the valid response from an array containing various responses.
+    param: response - Servers' responses. Tuple (repeatTimes, value, timestamp, [(server_id, data_sign)], [server])
+    return: (tuple - (value, timestamp, [echoes])) Valid response founded. None if error.
+     */
+    private ResponseValidator getValidResponse(List<ResponseValidator> responses) {
+        ResponseValidator validResponse = null;
+
+        for (ResponseValidator response : responses) {
+            if (response.repeatTimes >= faults + 1)
+                validResponse = response;
+            else
+                out_dated_servers.addAll(response.servers);
+        }
+
+        return validResponse;
+    }
+
+
+    /*
+    Analyse if echoes are valid.
+    param: echoes - Servers' echoes
+    param: value - Value signed
+    param: timestamp - Timestamp signed
+    return: (Array) Valid echoes.
+     */
+    private List analyseEchoes(List<Pair<Integer, String>> echoes, String value, Double timestamp) {
+        List<Pair<Integer, String>> validEchoes = new ArrayList<Pair<Integer, String>>();
+        for (Pair<Integer, String> echo : echoes) {
+            if (MySignature.verifySign(MySignature.getPublicKey(echo.fst.doubleValue(), -1d), echo.snd, value+timestamp.intValue()))
+                validEchoes.add(echo);
+        }
+
+        return validEchoes;
     }
 
 
     /*
     Gets the highest timestamp from an array containing various timestamps.
-    param: responses - Servers' responses
-    return: (int) Highest timestamp founded
+    param: response - Servers' responses
+    return: (int) Highest timestamp founded. -1 if error.
     */
     private Double analyseTimestampResponse(List<ResponseData> responses) {
-        Double timestamp = -1d;
-        int repeatTimes = 0;
-
+        List<Pair<Double, Integer>> array = new ArrayList<Pair<Double, Integer>>();
         for (ResponseData response : responses) {
-            if (response.timestamp.equals(timestamp))
-                repeatTimes++;
-            else if (response.timestamp > timestamp) {
-                timestamp = response.timestamp;
-                repeatTimes = 1;
-            }
-            else
-                break;
+            addTimestampOnArray(response.timestamp, array);
         }
 
-        return timestamp;
+        return getLastestTimestamp(array);
     }
 
 
     /*
-    Transfer Objects from one array to other
-    param: oldArray - Array where objects will leave
-    param: newArray - Array where objects will come
-    */
-    private void transferObject(List oldArray, List newArray) {
-        for (Object object : oldArray) {
-            oldArray.remove(object);
-            newArray.add(object);
+    Adds a timestamp on an array. If timestamp already there, increments value.
+    param: timestamp - Timestamp to be added.
+    param: array - Array to add timestamp. Contains tuples (timestamp, repeatTimes)
+     */
+    private void addTimestampOnArray(Double timestamp, List<Pair<Double, Integer>> array) {
+        boolean wasAdded = false;
+        for (int i = 0; i < array.size(); i++) {
+            Pair<Double, Integer> tuple = array.get(i);
+            if (tuple.fst.equals(timestamp)) {
+                array.remove(i);
+                array.add(i, new Pair<Double, Integer>(tuple.fst, tuple.snd + 1));
+                wasAdded = true;
+            }
         }
+
+        if (!wasAdded)
+            array.add(new Pair<Double, Integer>(timestamp, 1));
+    }
+
+
+    /*
+    Returns the lastest timestamp that. (that occurs in b + 1 responses)
+    param: array - Array to add timestamp. Contains tuples (timestamp, repeatTimes)
+    return: (int) Highest timestamp founded. -1 if error.
+     */
+    private Double getLastestTimestamp(List<Pair<Double, Integer>> array) {
+        Double timestamp = -1d;
+        for (Pair<Double, Integer> tuple : array) {
+            if (tuple.fst > timestamp && tuple.snd >= faults + 1)
+                timestamp = tuple.fst;
+        }
+
+        return timestamp;
     }
 }

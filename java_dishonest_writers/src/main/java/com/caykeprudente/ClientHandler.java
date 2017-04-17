@@ -8,7 +8,9 @@ import com.sun.tools.javac.util.Pair;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.SocketHandler;
 
@@ -17,7 +19,7 @@ import java.util.logging.SocketHandler;
  */
 public class ClientHandler implements Runnable {
     enum Function {
-        write, read, readTimestamp
+        write, write_back, read, readTimestamp, readEchoeFromServer
     }
 
     private Client client;
@@ -40,12 +42,14 @@ public class ClientHandler implements Runnable {
     */
     @Override
     public void run() {
-        if (function == Function.write)
-            writeOnServer();
+        if (function == Function.write || function == Function.write_back)
+            writeOnServer(function);
         else if (function == Function.read)
             readFromServer();
         else if (function == Function.readTimestamp)
             readTimestampFromServer();
+        else if (function == Function.readEchoeFromServer)
+            readEchoeFromServer();
     }
 
 
@@ -54,18 +58,27 @@ public class ClientHandler implements Runnable {
     param: server - Server to send the request
     param: value - Value to be written
     param: timestamp - Timestamp from value
-    param: data_signature - Signature from value+timestamp
-    param: client_id - Id from the client that created the value
+    param: echos - Signatures for value+timestamp from servers
     param: request_code - Request ID identifier
     */
-    private void writeOnServer() {
+    private void writeOnServer(Function type) {
+        List<Map<String, Object>> echoesArray = new ArrayList<Map<String, Object>>();
+        for (Pair<Integer, String> echoe : data.echoes) {
+            Map<String, Object> echoeDict = new HashMap<String, Object>();
+            echoeDict.put("server_id", echoe.fst);
+            echoeDict.put("data_signature", echoe.snd);
+            echoesArray.add(echoeDict);
+        }
+
         Map<String, Object> request = new HashMap<String, Object>();
-        request.put( "type", Define.write);
+        if (type == Function.write)
+            request.put( "type", Define.write);
+        else
+            request.put( "type", Define.write_back);
         request.put( "timestamp", data.timestamp.intValue());
         request.put( "variable", data.value);
         request.put( "request_code", data.request_code.intValue());
-        request.put( "client_id", data.client_id.intValue());
-        request.put( "data_signature", data.data_signature);
+        request.put( "echoes", echoesArray);
 
         Socket clientSocket = null;
         try {
@@ -81,6 +94,12 @@ public class ClientHandler implements Runnable {
 
         LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
         try {
+            clientSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
             String status = (String) messageFromServer.get(Define.status);
             if (status.equals(Define.success)) {
                 client.lock_print.lock();
@@ -91,10 +110,6 @@ public class ClientHandler implements Runnable {
                 System.out.println("Error updating");
                 client.lock_print.unlock();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("No response from server - writeOnServer method");
-        }
     }
 
     /*
@@ -106,7 +121,6 @@ public class ClientHandler implements Runnable {
         Map<String, Object> request = new HashMap<String, Object>();
         request.put( "type", Define.read);
         request.put( "request_code", data.request_code.intValue());
-        request.put( "client_id", client.id.intValue());
 
         Socket clientSocket = null;
         try {
@@ -131,8 +145,7 @@ public class ClientHandler implements Runnable {
         Double request_code = (Double) messageFromServer.get(Define.request_code);
 
         if (status.equals(Define.success) && request_code.equals(data.request_code)) {
-            LinkedTreeMap<String, Object> dataDict = (LinkedTreeMap<String, Object>) messageFromServer.get(Define.data);
-            ResponseData responseData = new ResponseData(dataDict, data.server);
+            ResponseData responseData = new ResponseData(messageFromServer, data.server);
 
             client.lock.lock();
             if (client.responses.size() < client.quorum-1) {
@@ -170,7 +183,6 @@ public class ClientHandler implements Runnable {
         Map<String, Object> request = new HashMap<String, Object>();
         request.put( "type", Define.read_timestamp);
         request.put( "request_code", data.request_code.intValue());
-        request.put( "client_id", client.id.intValue());
 
         Socket clientSocket = null;
         try {
@@ -185,13 +197,17 @@ public class ClientHandler implements Runnable {
         }
 
         LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
+        try {
+            clientSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         String status = (String) messageFromServer.get(Define.status);
         Double request_code = (Double) messageFromServer.get(Define.request_code);
 
         if (status.equals(Define.success) && request_code.equals(data.request_code)) {
-            LinkedTreeMap<String, Object> dataDict = (LinkedTreeMap<String, Object>) messageFromServer.get(Define.data);
-            ResponseData responseData = new ResponseData(dataDict, data.server);
+            ResponseData responseData = new ResponseData(messageFromServer, data.server);
 
             client.lock.lock();
             if (client.responses.size() < client.quorum-1) {
@@ -199,6 +215,72 @@ public class ClientHandler implements Runnable {
             }
             else if (client.responses.size() == client.quorum-1) {
                 client.responses.add(responseData);
+                client.semaphore.release();
+            }
+            else {
+                client.lock_print.lock();
+                System.out.println("Quorum ja encheu. Jogando request fora...");
+                client.lock_print.unlock();
+            }
+            client.lock.unlock();
+        }
+        else if (status.equals(Define.error)) {
+            client.lock_print.lock();
+            System.out.println("Ocorreu algum erro na request");
+            client.lock_print.unlock();
+        }
+        else if (!request_code.equals(data.request_code)) {
+            client.lock_print.lock();
+            System.out.println("Response atrasada");
+            client.lock_print.unlock();
+        }
+    }
+
+
+    /*
+    Gets the echoe from a server and append in the echoes array if possible
+    param: server - Server to send the request
+    param: request_code - Request ID identifier
+     */
+    private void readEchoeFromServer() {
+        Map<String, Object> request = new HashMap<String, Object>();
+        request.put( "type", Define.get_echoe);
+        request.put( "request_code", data.request_code.intValue());
+        request.put( "variable", data.value);
+        request.put( "timestamp", data.timestamp.intValue());
+
+
+        Socket clientSocket = null;
+        try {
+            clientSocket = new Socket(data.server.fst, data.server.snd);
+            Connection.sendMessage(request, clientSocket);
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            client.lock_print.lock();
+            System.out.println("Error reading value from server");
+            client.lock_print.unlock();
+        }
+
+        LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
+        try {
+            clientSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String status = (String) messageFromServer.get(Define.status);
+        Double request_code = (Double) messageFromServer.get(Define.request_code);
+
+        if (status.equals(Define.success) && request_code.equals(data.request_code)) {
+            ResponseData responseData = new ResponseData(messageFromServer, data.server);
+
+            client.lock.lock();
+            if (client.echoes.size() < client.quorum-1) {
+                client.echoes.add(new Pair<Integer, String>(responseData.server_id.intValue(), responseData.data_signature));
+            }
+            else if (client.echoes.size() == client.quorum-1) {
+                client.echoes.add(new Pair<Integer, String>(responseData.server_id.intValue(), responseData.data_signature));
                 client.semaphore.release();
             }
             else {

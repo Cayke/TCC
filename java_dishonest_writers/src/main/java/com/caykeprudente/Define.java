@@ -7,7 +7,7 @@ public class Define {
     // plataform description
     public static final String plataform = "java";
 
-    public static final int timeout = 30;
+    public static final int timeout = 5;
 
 
     /*
