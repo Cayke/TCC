@@ -81,19 +81,20 @@ public class ClientHandler implements Runnable {
 
         LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
         try {
-            String status = (String) messageFromServer.get(Define.status);
-            if (status.equals(Define.success)) {
-                client.lock_print.lock();
-                System.out.println("Variable updated");
-                client.lock_print.unlock();
-            } else {
-                client.lock_print.lock();
-                System.out.println("Error updating");
-                client.lock_print.unlock();
-            }
-        } catch (Exception e) {
+            clientSocket.close();
+        } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("No response from server - writeOnServer method");
+        }
+
+        String status = (String) messageFromServer.get(Define.status);
+        if (status.equals(Define.success)) {
+            client.lock_print.lock();
+            System.out.println("Variable updated");
+            client.lock_print.unlock();
+        } else {
+            client.lock_print.lock();
+            System.out.println("Error updating");
+            client.lock_print.unlock();
         }
     }
 
@@ -185,6 +186,11 @@ public class ClientHandler implements Runnable {
         }
 
         LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
+        try {
+            clientSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         String status = (String) messageFromServer.get(Define.status);
         Double request_code = (Double) messageFromServer.get(Define.request_code);
