@@ -13,12 +13,16 @@ class Server: NSObject {
     var PORT = -1;
     let ID : Int
     
+    let FAULTS = 1
+    let QUORUM = 2 * 1 + 1 //2*FAULTS + 1
+    
     var VARIABLE = "";
     var TIMESTAMP = -1;
     var DATA_SIGNATURE = "";
-    var CLIENT_ID = -1;
     
     var LOCK = pthread_mutex_t();
+    
+    var LAST_ECHOED_VALUES : Array<(Int, String)> = []
     
     
     /*
@@ -50,7 +54,7 @@ class Server: NSObject {
                 if let clientSocket = serverSocket.accept() {
                     DispatchQueue.global(qos: .background).async {
                         self.clientConnected(clientSocket: clientSocket)
-                        }
+                    }
                 } else {
                     print("accept error")
                 }
@@ -75,6 +79,8 @@ class Server: NSObject {
         let request = try? JSONSerialization.jsonObject(with: (requestJSON?.data(using: .utf8))!) as! [String:Any]
         
         getRequestStatus(request: request!, clientSocket: clientSocket)
+        
+        print("matando thread")
     }
     
     
@@ -86,14 +92,17 @@ class Server: NSObject {
     func getRequestStatus(request: Dictionary<String, Any>, clientSocket: TCPClient) {
         let type : String = request[Define.type] as! String
         
-        if type == Define.write {
-            self.write(request: request, clientSocket: clientSocket)
+        if type == Define.write || type == Define.write_back {
+            self.write(request: request, clientSocket: clientSocket, type: type)
         }
         else if type == Define.read {
             self.read(request: request, clientSocket: clientSocket)
         }
         else if type == Define.read_timestamp {
             self.readTimestamp(request: request, clientSocket: clientSocket)
+        }
+        else if type == Define.get_echoe {
+            self.getEchoe(request: request, clientSocket: clientSocket)
         }
         else if type == Define.bye {
             clientSocket.close()
@@ -117,29 +126,47 @@ class Server: NSObject {
      param: request - A dictionary with client's request data.
      param: socketTCP - Socket that has been created for the pair (Server, Client)
      */
-    func write (request: Dictionary<String, Any>, clientSocket: TCPClient) {
+    func write (request: Dictionary<String, Any>, clientSocket: TCPClient, type:String) {
         let variable : String = request[Define.variable] as! String
         let timestamp : Int = request[Define.timestamp] as! Int
-        let signature : String = request[Define.data_signature] as! String
-        let client_id : Int = request[Define.client_id] as! Int
+        
+        let echoesArray : [Dictionary<String, Any>] = request[Define.echoes] as! [Dictionary<String, Any>]
+        var echoes : [(Int, String)] = []
+        for var dict in echoesArray {
+            echoes.append((dict[Define.server_id] as! Int, dict[Define.data_signature] as! String))
+        }
+        
         
         pthread_mutex_lock(&self.LOCK)
         if timestamp > self.TIMESTAMP {
-            print ("Recebido variable = \(variable) e timestamp = \(timestamp)")
-            
-            self.VARIABLE = variable
-            self.TIMESTAMP = timestamp
-            self.DATA_SIGNATURE = signature
-            self.CLIENT_ID = client_id
-            
-            let response = [Define.server_id: self.ID,
-                            "plataform": Define.plataform,
-                            Define.request_code: request[Define.request_code],
-                            Define.status: Define.success,
-                            Define.msg: Define.variable_updated]
-            pthread_mutex_unlock(&self.LOCK)
-            
-            sendResponse(response: response, clientSocket: clientSocket)
+            if (isEchoValid(echoes: echoes, value: variable, timestamp: timestamp, type: type)) {
+                
+                print ("Recebido variable = \(variable) e timestamp = \(timestamp)")
+                
+                self.VARIABLE = variable
+                self.TIMESTAMP = timestamp
+                self.DATA_SIGNATURE = ""
+                self.LAST_ECHOED_VALUES = []
+                
+                let response = [Define.server_id: self.ID,
+                                "plataform": Define.plataform,
+                                Define.request_code: request[Define.request_code],
+                                Define.status: Define.success,
+                                Define.msg: Define.variable_updated]
+                pthread_mutex_unlock(&self.LOCK)
+                
+                sendResponse(response: response, clientSocket: clientSocket)
+            }
+            else {
+                let response = [Define.server_id: self.ID,
+                                "plataform": Define.plataform,
+                                Define.request_code: request[Define.request_code],
+                                Define.status: Define.error,
+                                Define.msg: Define.invalid_echoes]
+                pthread_mutex_unlock(&self.LOCK)
+                
+                sendResponse(response: response, clientSocket: clientSocket)
+            }
         }
         else {
             pthread_mutex_unlock(&self.LOCK)
@@ -156,6 +183,96 @@ class Server: NSObject {
     
     
     /*
+     Sends echo for timestamp and value
+     param: request - A dictionary with client's request data.
+     */
+    func getEchoe(request: Dictionary<String, Any>, clientSocket: TCPClient) {
+        let variable : String = request[Define.variable] as! String
+        let timestamp : Int = request[Define.timestamp] as! Int
+        
+        if timestamp < self.TIMESTAMP {
+            let response = [Define.server_id: self.ID,
+                            "plataform": Define.plataform,
+                            Define.request_code: request[Define.request_code],
+                            Define.status: Define.error,
+                            Define.msg: Define.outdated_timestamp]
+            
+            sendResponse(response: response, clientSocket: clientSocket)
+        }
+        else if !shouldEcho(variable: variable, timestamp: timestamp) {
+            let response = [Define.server_id: self.ID,
+                            "plataform": Define.plataform,
+                            Define.request_code: request[Define.request_code],
+                            Define.status: Define.error,
+                            Define.msg: Define.timestamp_already_echoed]
+            
+            sendResponse(response: response, clientSocket: clientSocket)
+        }
+        else {
+            if let privateKey = MySignature.getPrivateKey(server: self.ID, client: -1) {
+                let data_signature = MySignature.signData(privateKey: privateKey, data: variable + String(timestamp))
+                
+                let dataDict = [Define.data_signature: data_signature ?? ""] as [String : Any]
+                let response = [Define.server_id: self.ID,
+                                "plataform": Define.plataform,
+                                Define.request_code: request[Define.request_code],
+                                Define.status: Define.success,
+                                Define.msg: Define.get_echoe,
+                                Define.data: dataDict]
+                
+                sendResponse(response: response, clientSocket: clientSocket)
+            }
+        }
+    }
+    
+    
+    /*
+     Check if value was echoed before
+     param: value - Variable to sign.
+     param: timestamp - Timestamp.
+     return: (bool) If server should echo value and timestamp
+     */
+    func shouldEcho(variable: String, timestamp : Int) -> Bool {
+        for (time, value) in self.LAST_ECHOED_VALUES {
+            if time == timestamp && !(value == variable) {
+                return false;
+            }
+            else if time == timestamp && value == variable {
+                return true;
+            }
+        }
+        return true;
+    }
+    
+    
+    /*
+     Check if echoes are valid
+     param: echoes - Array with tuples(server_id, data_signature)
+     param: value - Variable to sign.
+     param: timestamp - Timestamp.
+     param: type - If is a write or write_back
+     return: (bool) If echoes are valid
+     */
+    func isEchoValid(echoes : [(Int, String)], value : String, timestamp : Int, type : String) -> Bool {
+        var validEchoes = 0
+        for (server_id, data_sign) in echoes {
+            if let publicKey = MySignature.getPublicKey(server: server_id, client: -1) {
+                if (MySignature.verifySign(publicKey: publicKey, signature_b64: data_sign, data: value+String(timestamp))) {
+                    validEchoes = validEchoes + 1
+                }
+            }
+        }
+        
+        if type == Define.write {
+            return validEchoes >= self.QUORUM
+        }
+        else { //write_back
+            return validEchoes >= self.FAULTS + 1
+        }
+    }
+    
+    
+    /*
      Sends data in register for client.
      param: request - A dictionary with client's request data.
      param: socketTCP - Socket that has been created for the pair (Server, Client)
@@ -164,8 +281,7 @@ class Server: NSObject {
         pthread_mutex_lock(&self.LOCK)
         let dataDict = [Define.variable: self.VARIABLE,
                         Define.timestamp: self.TIMESTAMP,
-                        Define.data_signature: self.DATA_SIGNATURE,
-                        Define.client_id: self.CLIENT_ID] as [String : Any]
+                        Define.data_signature: self.DATA_SIGNATURE] as [String : Any]
         let response = [Define.server_id: self.ID,
                         "plataform": Define.plataform,
                         Define.request_code: request[Define.request_code],
@@ -208,7 +324,7 @@ class Server: NSObject {
         do{
             let responseJSON = try JSONSerialization.data(withJSONObject: response, options: .prettyPrinted)
             
-            clientSocket.send(data: responseJSON)
+            _ = clientSocket.send(data: responseJSON)
         }
         catch {
             print (error.localizedDescription)
