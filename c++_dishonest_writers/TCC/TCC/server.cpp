@@ -86,7 +86,7 @@ namespace server{
             t.detach();
         }
         
-        close(serverSocket);
+        //close(serverSocket);
     }
     
     
