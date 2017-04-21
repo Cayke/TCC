@@ -102,7 +102,7 @@ namespace server{
         int n;
         
         bzero(data,2048);
-        n = read(socketTCPThread,data,2047);
+        n = (int) read(socketTCPThread,data,2047);
         if (n < 0)
             error("ERROR reading from socket");
         
@@ -158,7 +158,7 @@ namespace server{
      */
     void sendResponse(std::string responseJSON, int socketTCP)
     {
-        int n = send(socketTCP, responseJSON.c_str(), responseJSON.length(), 0);
+        int n = (int) send(socketTCP, responseJSON.c_str(), responseJSON.length(), 0);
         if (n < 0)
             error("ERROR writing to socket");
     }

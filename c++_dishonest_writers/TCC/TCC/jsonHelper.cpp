@@ -55,7 +55,7 @@ void addValueToDocument(rapidjson::Document *document, std::string key, int valu
 {
     rapidjson::Value vKey;
     //vKey.SetString(StringRef(key.c_str()));
-    vKey.SetString(key.c_str(), key.length(), document->GetAllocator());
+    vKey.SetString(key.c_str(), (int) key.length(), document->GetAllocator());
     
     rapidjson::Value vValue;
     vValue.SetInt(value);
@@ -66,11 +66,11 @@ void addValueToDocument(rapidjson::Document *document, std::string key, std::str
 {
     rapidjson::Value vKey;
     //vKey.SetString(StringRef(key.c_str()));
-    vKey.SetString(key.c_str(), key.length(), document->GetAllocator());
+    vKey.SetString(key.c_str(), (int) key.length(), document->GetAllocator());
     
     rapidjson::Value vValue;
     //vValue.SetString(StringRef(value.c_str()));
-    vValue.SetString(value.c_str(), value.length(), document->GetAllocator());
+    vValue.SetString(value.c_str(), (int) value.length(), document->GetAllocator());
     
     document->AddMember(vKey, vValue, document->GetAllocator());
 }
@@ -79,7 +79,7 @@ void addValueToValueStruct(rapidjson::Value *valueObject, rapidjson::Document *d
 {
     rapidjson::Value vKey;
     //vKey.SetString(StringRef(key.c_str()));
-    vKey.SetString(key.c_str(), key.length(), document->GetAllocator());
+    vKey.SetString(key.c_str(), (int) key.length(), document->GetAllocator());
     
     rapidjson::Value vValue;
     vValue.SetInt(value);
@@ -90,11 +90,11 @@ void addValueToValueStruct(rapidjson::Value *valueObject, rapidjson::Document *d
 {
     rapidjson::Value vKey;
     //vKey.SetString(StringRef(key.c_str()));
-    vKey.SetString(key.c_str(), key.length(), document->GetAllocator());
+    vKey.SetString(key.c_str(), (int) key.length(), document->GetAllocator());
     
     rapidjson::Value vValue;
     //vValue.SetString(StringRef(value.c_str()));
-    vValue.SetString(value.c_str(), value.length(), document->GetAllocator());
+    vValue.SetString(value.c_str(), (int) value.length(), document->GetAllocator());
     
     valueObject->AddMember(vKey, vValue, document->GetAllocator());
 }
@@ -103,7 +103,7 @@ void addValueToDocument(rapidjson::Document *document, std::string key, rapidjso
 {
     rapidjson::Value vKey;
     //vKey.SetString(StringRef(key.c_str()));
-    vKey.SetString(key.c_str(), key.length(), document->GetAllocator());
+    vKey.SetString(key.c_str(), (int) key.length(), document->GetAllocator());
     
     document->AddMember(vKey, *valueObject, document->GetAllocator());
 }
