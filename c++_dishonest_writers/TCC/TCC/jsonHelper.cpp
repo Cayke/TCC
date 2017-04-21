@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include <string>
+#include <vector>
 
 using namespace std;
 using namespace rapidjson;
@@ -40,6 +41,35 @@ std::string getStringWithKeyFromDocument(rapidjson::Document *document, std::str
     assert(value != document->MemberEnd());
     assert(value->value.IsString());
     return value->value.GetString();
+}
+
+std::vector<std::pair<int, std::string>> getEchoesArrayWithKeyFromDocument(rapidjson::Document *document, std::string key) {
+    Value::MemberIterator value = document->FindMember(key.c_str());
+    assert(value != document->MemberEnd());
+    assert(value->value.IsArray());
+    const Value& array = value->value.GetArray();
+    
+//    for (SizeType i = 0; i < array.Size(); i++) {
+//        Value::ConstValueIterator dictionary = array[i].GetObject();
+//        array[i].GetObject();
+//        CCLOG("a[%d] = %d\n", i, a[i].GetInt());
+//    }
+    
+    std::vector<std::pair<int, std::string>> echoes;
+    
+    for (rapidjson::Value::ConstValueIterator itr = array.Begin(); itr != array.End(); ++itr) {
+        int server_id;
+        std::string data_sign;
+        
+        if (itr->HasMember("server_id"))
+            server_id = (*itr)["server_id"].GetInt();
+        if (itr->HasMember("data_signature"))
+            data_sign = (*itr)["data_signature"].GetString();
+        
+        echoes.push_back(std::make_pair(server_id, data_sign));
+    }
+    
+    return echoes;
 }
 
 std::string getJSONStringForDocument(rapidjson::Document *document)

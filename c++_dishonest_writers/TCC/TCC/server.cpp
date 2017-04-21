@@ -17,9 +17,11 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
+#include <vector>
 
 #include "define.h"
 #include "jsonHelper.hpp"
+#include "signature.hpp"
 
 namespace server{
     
@@ -27,10 +29,14 @@ namespace server{
     int PORT = -1;
     int ID = -1;
     
+    int FAULTS = 1; //number of faults system can handle
+    int QUORUM = 2*FAULTS + 1;
+    
     std::string VARIABLE = "";
     int TIMESTAMP = -1;
     std::string DATA_SIGNATURE = "";
-    int CLIENT_ID = -1;
+    
+    std::vector<std::pair<int, std::string>> LAST_ECHOED_VALUES; //contem uma tupla (timestamp,value)
     
     std::mutex LOCK;
     
@@ -112,6 +118,8 @@ namespace server{
         getRequestStatus(&doc,socketTCPThread);
         
         close(socketTCPThread);
+        
+        std::cout << "matando thread";
     }
     
     
@@ -123,19 +131,19 @@ namespace server{
     void getRequestStatus(rapidjson::Document *request, int socketTCP)
     {
         std::string type = getStringWithKeyFromDocument(request, Define::type);
-        if (type == Define::write)
-            write(request, socketTCP);
+        if (type == Define::write || type == Define::write_back)
+            write(request, socketTCP, type);
         else if (type == Define::read)
             readData(request, socketTCP);
         else if (type == Define::read_timestamp)
             readTimestamp(request, socketTCP);
-        else if (type == Define::bye)
-        {
+        else if (type == Define::get_echoe)
+            getEchoe(request, socketTCP);
+        else if (type == Define::bye) {
             close(socketTCP);
             std::cout << "Cliente desconectou propositalmente";
         }
-        else
-        {
+        else {
             rapidjson::Document document;
             document.SetObject();
             
@@ -165,39 +173,56 @@ namespace server{
     
     
     /*
-    Write data in register if the requirements are followed.
-    param: request - A dictionary with client's request data.
-    param: socketTCP - Socket that has been created for the pair (Server, Client)
-    */
-    void write(rapidjson::Document *request, int socketTCP)
+     Write data in register if the requirements are followed.
+     param: request - A dictionary with client's request data.
+     param: socketTCP - Socket that has been created for the pair (Server, Client)
+     */
+    void write(rapidjson::Document *request, int socketTCP, std::string type)
     {
         std::string variable = getStringWithKeyFromDocument(request, Define::variable);
         int timestamp = getIntWithKeyFromDocument(request, Define::timestamp);
-        std::string data_signature = getStringWithKeyFromDocument(request, Define::data_signature);
-        int client_id = getIntWithKeyFromDocument(request, Define::client_id);
-        
-        std::cout << "Recebido variable = " + variable + " e timestamp " + std::to_string(timestamp) + "\n";
+        std::vector<std::pair<int, std::string>> echoes = getEchoesArrayWithKeyFromDocument(request, Define::echoes);
         
         LOCK.lock();
         if (timestamp > TIMESTAMP)
         {
-            VARIABLE = variable;
-            TIMESTAMP = timestamp;
-            DATA_SIGNATURE = data_signature;
-            CLIENT_ID = client_id;
-            
-            rapidjson::Document document;
-            document.SetObject();
-            
-            addValueToDocument(&document, Define::server_id, ID);
-            addValueToDocument(&document, "plataform", Define::plataform);
-            addValueToDocument(&document, Define::request_code, getIntWithKeyFromDocument(request, Define::request_code));
-            addValueToDocument(&document, Define::status, Define::success);
-            addValueToDocument(&document, Define::msg, Define::variable_updated);
-            
-            std::string responseJSON = getJSONStringForDocument(&document);
-            LOCK.unlock();
-            sendResponse(responseJSON, socketTCP);
+            if (isEchoValid(echoes, variable, timestamp, type)) {
+                VARIABLE = variable;
+                TIMESTAMP = timestamp;
+                DATA_SIGNATURE = signData(ID, variable + std::to_string(timestamp));
+                LAST_ECHOED_VALUES.clear();
+                LOCK.unlock();
+                
+                rapidjson::Document document;
+                document.SetObject();
+                
+                addValueToDocument(&document, Define::server_id, ID);
+                addValueToDocument(&document, "plataform", Define::plataform);
+                addValueToDocument(&document, Define::request_code, getIntWithKeyFromDocument(request, Define::request_code));
+                addValueToDocument(&document, Define::status, Define::success);
+                addValueToDocument(&document, Define::msg, Define::variable_updated);
+                
+                std::string responseJSON = getJSONStringForDocument(&document);
+                
+                std::cout << "Recebido variable = " + variable + " e timestamp " + std::to_string(timestamp) + "\n";
+                
+                sendResponse(responseJSON, socketTCP);
+            }
+            else {
+                LOCK.unlock();
+                
+                rapidjson::Document document;
+                document.SetObject();
+                
+                addValueToDocument(&document, Define::server_id, ID);
+                addValueToDocument(&document, "plataform", Define::plataform);
+                addValueToDocument(&document, Define::request_code, getIntWithKeyFromDocument(request, Define::request_code));
+                addValueToDocument(&document, Define::status, Define::error);
+                addValueToDocument(&document, Define::msg, Define::invalid_echoes);
+                
+                std::string responseJSON = getJSONStringForDocument(&document);
+                sendResponse(responseJSON, socketTCP);
+            }
         }
         else
         {
@@ -219,9 +244,9 @@ namespace server{
     
     
     /*
-    Sends data in register for client.
-    param: request - A dictionary with client's request data.
-    param: socketTCP - Socket that has been created for the pair (Server, Client)
+     Sends data in register for client.
+     param: request - A dictionary with client's request data.
+     param: socketTCP - Socket that has been created for the pair (Server, Client)
      */
     void readData(rapidjson::Document *request, int socketTCP)
     {
@@ -233,7 +258,6 @@ namespace server{
         addValueToValueStruct(&dataDict, &response, Define::variable, VARIABLE);
         addValueToValueStruct(&dataDict, &response, Define::timestamp, TIMESTAMP);
         addValueToValueStruct(&dataDict, &response, Define::data_signature, DATA_SIGNATURE);
-        addValueToValueStruct(&dataDict, &response, Define::client_id, CLIENT_ID);
         
         addValueToDocument(&response, Define::data, &dataDict);
         addValueToDocument(&response, Define::server_id, ID);
@@ -249,10 +273,10 @@ namespace server{
     
     
     /*
-    Sends timestamp in register for client.
-    param: request - A dictionary with client's request data.
-    param: socketTCP - Socket that has been created for the pair (Server, Client)
-    */
+     Sends timestamp in register for client.
+     param: request - A dictionary with client's request data.
+     param: socketTCP - Socket that has been created for the pair (Server, Client)
+     */
     void readTimestamp(rapidjson::Document *request, int socketTCP)
     {
         LOCK.lock();
@@ -273,7 +297,115 @@ namespace server{
         LOCK.unlock();
         sendResponse(responseJSON, socketTCP);
     }
-
+    
+    
+    /*
+    Sends echo for timestamp and value
+    param: request - A dictionary with client's request data.
+    param: socketTCP - Socket that has been created for the pair (Server, Client)
+    */
+    void getEchoe(rapidjson::Document *request, int socketTCP) {
+        std::string variable = getStringWithKeyFromDocument(request, Define::variable);
+        int timestamp = getIntWithKeyFromDocument(request, Define::timestamp);
+        
+        LOCK.lock();
+        if (timestamp < TIMESTAMP) {
+            LOCK.unlock();
+            
+            rapidjson::Document document;
+            document.SetObject();
+            
+            addValueToDocument(&document, Define::server_id, ID);
+            addValueToDocument(&document, "plataform", Define::plataform);
+            addValueToDocument(&document, Define::request_code, getIntWithKeyFromDocument(request, Define::request_code));
+            addValueToDocument(&document, Define::status, Define::error);
+            addValueToDocument(&document, Define::msg, Define::outdated_timestamp);
+            
+            std::string responseJSON = getJSONStringForDocument(&document);
+            sendResponse(responseJSON, socketTCP);
+        }
+        else if (!shouldEcho(variable, timestamp)) {
+            LOCK.unlock();
+            
+            rapidjson::Document document;
+            document.SetObject();
+            
+            addValueToDocument(&document, Define::server_id, ID);
+            addValueToDocument(&document, "plataform", Define::plataform);
+            addValueToDocument(&document, Define::request_code, getIntWithKeyFromDocument(request, Define::request_code));
+            addValueToDocument(&document, Define::status, Define::error);
+            addValueToDocument(&document, Define::msg, Define::timestamp_already_echoed);
+            
+            std::string responseJSON = getJSONStringForDocument(&document);
+            sendResponse(responseJSON, socketTCP);
+        }
+        else {
+            LOCK.unlock();
+            
+            std::string data_signature = signData(ID, variable + std::to_string(timestamp));
+            
+            rapidjson::Document response;
+            response.SetObject();
+            
+            rapidjson::Value dataDict(rapidjson::kObjectType);
+            addValueToValueStruct(&dataDict, &response, Define::data_signature, data_signature);
+            
+            addValueToDocument(&response, Define::data, &dataDict);
+            addValueToDocument(&response, Define::server_id, ID);
+            addValueToDocument(&response, "plataform", Define::plataform);
+            addValueToDocument(&response, Define::request_code, getIntWithKeyFromDocument(request, Define::request_code));
+            addValueToDocument(&response, Define::status, Define::success);
+            addValueToDocument(&response, Define::msg, Define::get_echoe);
+            
+            std::string responseJSON = getJSONStringForDocument(&response);
+            
+            sendResponse(responseJSON, socketTCP);
+        }
+    }
+    
+    
+    /*
+    Check if value was echoed before
+    param: value - Variable to sign.
+    param: timestamp - Timestamp.
+    return: (bool) If server should echo value and timestamp
+    */
+    bool shouldEcho(std::string value, int timestamp) {
+        for(std::vector<std::pair<int, std::string>>::const_iterator iterator = LAST_ECHOED_VALUES.begin() ; iterator < LAST_ECHOED_VALUES.end(); iterator ++) {
+            std::pair<int, std::string> tuple = *iterator;
+            if (tuple.first == TIMESTAMP && tuple.second != value)
+                return false;
+            else if (tuple.first == TIMESTAMP && tuple.second == value)
+                return true;
+        }
+        
+        return true;
+    }
+    
+    
+    /*
+    Check if echoes are valid
+    param: echoes - Array with tuples(server_id, data_signature)
+    param: value - Variable to sign.
+    param: timestamp - Timestamp.
+    param: type - If is a write or write_back
+    return: (bool) If echoes are valid
+    */
+    bool isEchoValid(std::vector<std::pair<int, std::string>> echoes, std::string value, int timestamp, std::string type) {
+        int validEchoes = 0;
+        
+        for(std::vector<std::pair<int, std::string>>::const_iterator iterator = echoes.begin() ; iterator < echoes.end(); iterator ++) {
+            std::pair<int, std::string> echoe = *iterator;
+            if (verify(echoe.first, value + std::to_string(timestamp), echoe.second))
+                validEchoes++;
+        }
+        
+        if (type == Define::write)
+            return validEchoes >= QUORUM;
+        else
+            return validEchoes >= FAULTS + 1;
+    }
+    
     
     /*
      This function is called when a system call fails

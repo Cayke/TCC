@@ -17,6 +17,7 @@ rapidjson::Document parseJsonStringToDocument (std::string jsonString);
 int getIntWithKeyFromDocument(rapidjson::Document *document, std::string key);
 std::string getStringWithKeyFromDocument(rapidjson::Document *document, std::string key);
 std::string getJSONStringForDocument(rapidjson::Document *document);
+std::vector<std::pair<int, std::string>> getEchoesArrayWithKeyFromDocument(rapidjson::Document *document, std::string key);
 void addValueToDocument(rapidjson::Document *document, std::string key, int value);
 void addValueToDocument(rapidjson::Document *document, std::string key, std::string value);
 void addValueToValueStruct(rapidjson::Value *valueObject, rapidjson::Document *document, std::string key, int value);
