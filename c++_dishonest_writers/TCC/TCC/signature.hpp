@@ -10,7 +10,13 @@
 #define signature_hpp
 
 #include <stdio.h>
+#include <string>
 
-bool verify(int server_id, const unsigned char *originalMessage, int messageSize, const unsigned char *signature);
+bool verify(int server_id, std::string message, std::string signature);
+std::string signData(int server_id, std::string message);
+
+char *base64encode (const void *b64_encode_this, int encode_this_many_bytes);
+char *base64decode (const void *b64_decode_this, int decode_this_many_bytes);
+
 
 #endif /* signature_hpp */
