@@ -1,0 +1,3 @@
+target ‘tcc’ do
+pod 'OpenSSL-Universal'
+end
