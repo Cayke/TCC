@@ -10,8 +10,8 @@ public class Main {
 
     public static void main(String[] args) {
 	    // write your code here
-        //runServer(0d);
-        runClient();
+        runServer(3d);
+        //runClient();
     }
 
     private static void runServer(Double id) {

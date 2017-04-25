@@ -46,7 +46,7 @@ class TestClient():
     def initUserInterface(self):
         while not self.exit:
             choice = 0
-            while choice != '1' and choice != '2' and choice != '3':
+            while choice != '1' and choice != '2' and choice != '3' and choice != "4":
                 self.cleanScreen()
                 with self.LOCK_PRINT:
                     print ('*********************************\n')
@@ -70,6 +70,12 @@ class TestClient():
 
             elif choice == '3':
                 self.terminate()
+
+            elif choice == '4':
+                data = RepresentedData.getData()
+
+                if data != '':
+                    self.getEchoes(data, 0)
 
         print('Adeus')
 
