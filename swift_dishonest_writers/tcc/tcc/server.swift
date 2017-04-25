@@ -146,8 +146,7 @@ class Server: NSObject {
                 self.VARIABLE = variable
                 self.TIMESTAMP = timestamp
                 let message = variable + String(timestamp)
-                let data_signature = signData(String(self.ID), message, Int32(message.characters.count))
-                self.DATA_SIGNATURE = String(describing: data_signature)
+                self.DATA_SIGNATURE = String(cString:signData(String(self.ID), message, Int32(message.characters.count)))
                 self.LAST_ECHOED_VALUES = []
                 
                 let response = [Define.server_id: self.ID,
@@ -212,18 +211,16 @@ class Server: NSObject {
         }
         else {
             let message = variable + String(timestamp)
-            if let data_signature = signData(String(self.ID), message, Int32(message.characters.count)) {
-                
-                let dataDict = [Define.data_signature: data_signature] as [String : Any]
-                let response = [Define.server_id: self.ID,
-                                "plataform": Define.plataform,
-                                Define.request_code: request[Define.request_code] as! Int,
-                                Define.status: Define.success,
-                                Define.msg: Define.get_echoe,
-                                Define.data: dataDict] as Dictionary<String, Any>
-                
-                sendResponse(response: response, clientSocket: clientSocket)
-            }
+            let data_signature = String(cString:signData(String(self.ID), message, Int32(message.characters.count)))
+            let dataDict = [Define.data_signature: data_signature] as [String : Any]
+            let response = [Define.server_id: self.ID,
+                            "plataform": Define.plataform,
+                            Define.request_code: request[Define.request_code] as! Int,
+                            Define.status: Define.success,
+                            Define.msg: Define.get_echoe,
+                            Define.data: dataDict] as Dictionary<String, Any>
+            
+            sendResponse(response: response, clientSocket: clientSocket)
         }
     }
     
