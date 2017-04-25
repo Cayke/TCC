@@ -40,12 +40,12 @@
 
 //return socket fd
 int yudpsocket_server(const char *address, int port) {
-  
+    
     //create socket
     int socketfd=socket(AF_INET, SOCK_DGRAM, 0);
     int reuseon = 1;
     int r = -1;
-  
+    
     //bind
     struct sockaddr_in serv_addr;
     serv_addr.sin_len = sizeof(struct sockaddr_in);
@@ -60,11 +60,11 @@ int yudpsocket_server(const char *address, int port) {
         serv_addr.sin_port = htons(port);
         memset( &serv_addr, '\0', sizeof(serv_addr));
     }
-  
+    
     if (r == -1) {
-       return -1;
+        return -1;
     }
-  
+    
     r = bind(socketfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
     if (r == 0) {
         return socketfd;
@@ -81,7 +81,7 @@ int yudpsocket_recive(int socket_fd, char *outdata, int expted_len, char *remote
     char *clientip = inet_ntoa(cli_addr.sin_addr);
     memcpy(remoteip, clientip, strlen(clientip));
     *remoteport = cli_addr.sin_port;
-  
+    
     return len;
 }
 
@@ -95,7 +95,7 @@ int yudpsocket_client() {
     int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
     int reuseon = 1;
     setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &reuseon, sizeof(reuseon));
-  
+    
     return socketfd;
 }
 
@@ -108,16 +108,16 @@ void enable_broadcast(int socket_fd) {
 int yudpsocket_get_server_ip(char *host, char *ip) {
     struct hostent *hp;
     struct sockaddr_in address;
-  
+    
     hp = gethostbyname(host);
     if (hp == NULL) {
         return -1;
     }
-  
+    
     bcopy((char *)hp->h_addr, (char *)&address.sin_addr, hp->h_length);
     char *clientip = inet_ntoa(address.sin_addr);
     memcpy(ip, clientip, strlen(clientip));
-  
+    
     return 0;
 }
 
@@ -130,6 +130,6 @@ int yudpsocket_sentto(int socket_fd, char *msg, int len, char *toaddr, int topot
     address.sin_port = htons(topotr);
     address.sin_addr.s_addr = inet_addr(toaddr);
     int sendlen = (int)sendto(socket_fd, msg, len, 0, (struct sockaddr *)&address, addrlen);
-  
+    
     return sendlen;
 }

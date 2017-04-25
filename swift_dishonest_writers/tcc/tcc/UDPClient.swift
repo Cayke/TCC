@@ -48,7 +48,7 @@ open class UDPClient: Socket {
         }
         
         super.init(address: ip, port: port)
-      
+        
         let fd: Int32 = c_yudpsocket_client()
         if fd > 0 {
             self.fd = fd
@@ -56,9 +56,9 @@ open class UDPClient: Socket {
     }
     
     /*
-    * send data
-    * return success or fail with message
-    */
+     * send data
+     * return success or fail with message
+     */
     open func send(data: [Byte]) -> Result {
         guard let fd = self.fd else { return .failure(SocketError.connectionClosed) }
         
@@ -71,9 +71,9 @@ open class UDPClient: Socket {
     }
     
     /*
-    * send string
-    * return success or fail with message
-    */
+     * send string
+     * return success or fail with message
+     */
     open func send(string: String) -> Result {
         guard let fd = self.fd else { return .failure(SocketError.connectionClosed) }
         
@@ -86,8 +86,8 @@ open class UDPClient: Socket {
     }
     
     /*
-    * enableBroadcast
-    */
+     * enableBroadcast
+     */
     open func enableBroadcast() {
         guard let fd: Int32 = self.fd else { return }
         
@@ -95,9 +95,9 @@ open class UDPClient: Socket {
     }
     
     /*
-    *
-    * send nsdata
-    */
+     *
+     * send nsdata
+     */
     open func send(data: Data) -> Result {
         guard let fd = self.fd else { return .failure(SocketError.connectionClosed) }
         
@@ -124,13 +124,13 @@ open class UDPServer: Socket {
     
     public override init(address: String, port: Int32) {
         super.init(address: address, port: port)
-      
+        
         let fd = c_yudpsocket_server(address, port: port)
-        if fd > 0 { 
+        if fd > 0 {
             self.fd = fd
         }
     }
-  
+    
     //TODO add multycast and boardcast
     open func recv(_ expectlen: Int) -> ([Byte]?, String, Int) {
         if let fd = self.fd {
@@ -143,19 +143,19 @@ open class UDPServer: Socket {
             if let ip = String(cString: remoteipbuff, encoding: String.Encoding.utf8) {
                 address = ip
             }
-          
+            
             if readLen <= 0 {
                 return (nil, address, port)
             }
-          
+            
             let rs = buff[0...Int(readLen-1)]
             let data: [Byte] = Array(rs)
             return (data, address, port)
         }
-      
+        
         return (nil, "no ip", 0)
     }
-  
+    
     open func close() {
         guard let fd = self.fd else { return }
         

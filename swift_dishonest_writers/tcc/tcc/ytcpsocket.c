@@ -63,7 +63,7 @@ int ytcpsocket_connect(const char *host, int port, int timeout) {
     if (hp == NULL) {
         return -1;
     }
-  
+    
     bcopy((char *)hp->h_addr, (char *)&sa.sin_addr, hp->h_length);
     sa.sin_family = hp->h_addrtype;
     sa.sin_port = htons(port);
@@ -76,7 +76,7 @@ int ytcpsocket_connect(const char *host, int port, int timeout) {
     FD_SET(sockfd, &fdwrite);
     tvSelect.tv_sec = timeout;
     tvSelect.tv_usec = 0;
-  
+    
     int retval = select(sockfd + 1, NULL, &fdwrite, NULL, &tvSelect);
     if (retval < 0) {
         close(sockfd);
@@ -92,7 +92,7 @@ int ytcpsocket_connect(const char *host, int port, int timeout) {
             close(sockfd);
             return -4;//connect fail
         }
-      
+        
         ytcpsocket_set_block(sockfd, 1);
         int set = 1;
         setsockopt(sockfd, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
@@ -139,7 +139,7 @@ int ytcpsocket_listen(const char *address, int port) {
     int socketfd = socket(AF_INET, SOCK_STREAM, 0);
     int reuseon = 1;
     setsockopt(socketfd, SOL_SOCKET, SO_REUSEADDR, &reuseon, sizeof(reuseon));
-  
+    
     //bind
     struct sockaddr_in serv_addr;
     memset( &serv_addr, '\0', sizeof(serv_addr));

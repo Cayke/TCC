@@ -112,9 +112,9 @@ class Server: NSObject {
         else {
             let response = [Define.server_id: self.ID,
                             "plataform": Define.plataform,
-                            Define.request_code: request[Define.request_code],
+                            Define.request_code: request[Define.request_code] as! Int,
                             Define.status: Define.error,
-                            Define.msg: Define.undefined_type]
+                            Define.msg: Define.undefined_type] as Dictionary<String, Any>
             
             sendResponse(response: response, clientSocket: clientSocket)
         }
@@ -145,14 +145,16 @@ class Server: NSObject {
                 
                 self.VARIABLE = variable
                 self.TIMESTAMP = timestamp
-                self.DATA_SIGNATURE = ""
+                let message = variable + String(timestamp)
+                let data_signature = signData(String(self.ID), message, Int32(message.characters.count))
+                self.DATA_SIGNATURE = String(describing: data_signature)
                 self.LAST_ECHOED_VALUES = []
                 
                 let response = [Define.server_id: self.ID,
                                 "plataform": Define.plataform,
-                                Define.request_code: request[Define.request_code],
+                                Define.request_code: request[Define.request_code] as! Int,
                                 Define.status: Define.success,
-                                Define.msg: Define.variable_updated]
+                                Define.msg: Define.variable_updated] as Dictionary<String, Any>
                 pthread_mutex_unlock(&self.LOCK)
                 
                 sendResponse(response: response, clientSocket: clientSocket)
@@ -160,9 +162,9 @@ class Server: NSObject {
             else {
                 let response = [Define.server_id: self.ID,
                                 "plataform": Define.plataform,
-                                Define.request_code: request[Define.request_code],
+                                Define.request_code: request[Define.request_code] as! Int,
                                 Define.status: Define.error,
-                                Define.msg: Define.invalid_echoes]
+                                Define.msg: Define.invalid_echoes] as Dictionary<String, Any>
                 pthread_mutex_unlock(&self.LOCK)
                 
                 sendResponse(response: response, clientSocket: clientSocket)
@@ -173,9 +175,9 @@ class Server: NSObject {
             
             let response = [Define.server_id: self.ID,
                             "plataform": Define.plataform,
-                            Define.request_code: request[Define.request_code],
+                            Define.request_code: request[Define.request_code] as! Int,
                             Define.status: Define.error,
-                            Define.msg: Define.outdated_timestamp]
+                            Define.msg: Define.outdated_timestamp] as Dictionary<String, Any>
             
             sendResponse(response: response, clientSocket: clientSocket)
         }
@@ -193,32 +195,32 @@ class Server: NSObject {
         if timestamp < self.TIMESTAMP {
             let response = [Define.server_id: self.ID,
                             "plataform": Define.plataform,
-                            Define.request_code: request[Define.request_code],
+                            Define.request_code: request[Define.request_code] as! Int,
                             Define.status: Define.error,
-                            Define.msg: Define.outdated_timestamp]
+                            Define.msg: Define.outdated_timestamp]as Dictionary<String, Any>
             
             sendResponse(response: response, clientSocket: clientSocket)
         }
         else if !shouldEcho(variable: variable, timestamp: timestamp) {
             let response = [Define.server_id: self.ID,
                             "plataform": Define.plataform,
-                            Define.request_code: request[Define.request_code],
+                            Define.request_code: request[Define.request_code] as! Int,
                             Define.status: Define.error,
-                            Define.msg: Define.timestamp_already_echoed]
+                            Define.msg: Define.timestamp_already_echoed] as Dictionary<String, Any>
             
             sendResponse(response: response, clientSocket: clientSocket)
         }
         else {
-            if let privateKey = MySignature.getPrivateKey(server: self.ID, client: -1) {
-                let data_signature = MySignature.signData(privateKey: privateKey, data: variable + String(timestamp))
+            let message = variable + String(timestamp)
+            if let data_signature = signData(String(self.ID), message, Int32(message.characters.count)) {
                 
-                let dataDict = [Define.data_signature: data_signature ?? ""] as [String : Any]
+                let dataDict = [Define.data_signature: data_signature] as [String : Any]
                 let response = [Define.server_id: self.ID,
                                 "plataform": Define.plataform,
-                                Define.request_code: request[Define.request_code],
+                                Define.request_code: request[Define.request_code] as! Int,
                                 Define.status: Define.success,
                                 Define.msg: Define.get_echoe,
-                                Define.data: dataDict]
+                                Define.data: dataDict] as Dictionary<String, Any>
                 
                 sendResponse(response: response, clientSocket: clientSocket)
             }
@@ -256,10 +258,9 @@ class Server: NSObject {
     func isEchoValid(echoes : [(Int, String)], value : String, timestamp : Int, type : String) -> Bool {
         var validEchoes = 0
         for (server_id, data_sign) in echoes {
-            if let publicKey = MySignature.getPublicKey(server: server_id, client: -1) {
-                if (MySignature.verifySign(publicKey: publicKey, signature_b64: data_sign, data: value+String(timestamp))) {
-                    validEchoes = validEchoes + 1
-                }
+            let data = value+String(timestamp)
+            if verifySignature(String(server_id), data, Int32(data.characters.count), data_sign) {
+                validEchoes = validEchoes + 1
             }
         }
         
@@ -284,10 +285,10 @@ class Server: NSObject {
                         Define.data_signature: self.DATA_SIGNATURE] as [String : Any]
         let response = [Define.server_id: self.ID,
                         "plataform": Define.plataform,
-                        Define.request_code: request[Define.request_code],
+                        Define.request_code: request[Define.request_code] as! Int,
                         Define.status: Define.success,
                         Define.msg: Define.read,
-                        Define.data: dataDict]
+                        Define.data: dataDict] as Dictionary<String, Any>
         pthread_mutex_unlock(&self.LOCK)
         
         sendResponse(response: response, clientSocket: clientSocket)
@@ -304,10 +305,10 @@ class Server: NSObject {
         let dataDict = [Define.timestamp: self.TIMESTAMP]
         let response = [Define.server_id: self.ID,
                         "plataform": Define.plataform,
-                        Define.request_code: request[Define.request_code],
+                        Define.request_code: request[Define.request_code] as! Int,
                         Define.status: Define.success,
                         Define.msg: Define.read,
-                        Define.data: dataDict]
+                        Define.data: dataDict] as Dictionary<String, Any>
         pthread_mutex_unlock(&self.LOCK)
         
         sendResponse(response: response, clientSocket: clientSocket)

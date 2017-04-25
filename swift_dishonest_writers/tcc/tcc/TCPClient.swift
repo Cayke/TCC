@@ -38,7 +38,7 @@ import Foundation
 @_silgen_name("ytcpsocket_accept") private func c_ytcpsocket_accept(_ onsocketfd:Int32,ip:UnsafePointer<Int8>,port:UnsafePointer<Int32>) -> Int32
 
 open class TCPClient: Socket {
-  
+    
     /*
      * connect to server
      * return success or fail with message
@@ -61,11 +61,11 @@ open class TCPClient: Socket {
             }
         }
     }
-  
+    
     /*
-    * close socket
-    * return success or fail with message
-    */
+     * close socket
+     * return success or fail with message
+     */
     open func close() {
         guard let fd = self.fd else { return }
         
@@ -74,27 +74,27 @@ open class TCPClient: Socket {
     }
     
     /*
-    * send data
-    * return success or fail with message
-    */
+     * send data
+     * return success or fail with message
+     */
     open func send(data: [Byte]) -> Result {
         guard let fd = self.fd else { return .failure(SocketError.connectionClosed) }
         
         let sendsize: Int32 = c_ytcpsocket_send(fd, buff: data, len: Int32(data.count))
         if Int(sendsize) == data.count {
-           return .success
+            return .success
         } else {
             return .failure(SocketError.unknownError)
         }
     }
     
     /*
-    * send string
-    * return success or fail with message
-    */
+     * send string
+     * return success or fail with message
+     */
     open func send(string: String) -> Result {
         guard let fd = self.fd else { return .failure(SocketError.connectionClosed) }
-      
+        
         let sendsize = c_ytcpsocket_send(fd, buff: string, len: Int32(strlen(string)))
         if sendsize == Int32(strlen(string)) {
             return .success
@@ -104,12 +104,12 @@ open class TCPClient: Socket {
     }
     
     /*
-    *
-    * send nsdata
-    */
+     *
+     * send nsdata
+     */
     open func send(data: Data) -> Result {
         guard let fd = self.fd else { return .failure(SocketError.connectionClosed) }
-      
+        
         var buff = [Byte](repeating: 0x0,count: data.count)
         (data as NSData).getBytes(&buff, length: data.count)
         let sendsize = c_ytcpsocket_send(fd, buff: buff, len: Int32(data.count))
@@ -121,24 +121,24 @@ open class TCPClient: Socket {
     }
     
     /*
-    * read data with expect length
-    * return success or fail with message
-    */
+     * read data with expect length
+     * return success or fail with message
+     */
     open func read(_ expectlen:Int, timeout:Int = -1) -> [Byte]? {
         guard let fd:Int32 = self.fd else { return nil }
-      
+        
         var buff = [Byte](repeating: 0x0,count: expectlen)
         let readLen = c_ytcpsocket_pull(fd, buff: &buff, len: Int32(expectlen), timeout: Int32(timeout))
         if readLen <= 0 { return nil }
         let rs = buff[0...Int(readLen-1)]
         let data: [Byte] = Array(rs)
-      
+        
         return data
     }
 }
 
 open class TCPServer: Socket {
-
+    
     open func listen() -> Result {
         let fd = c_ytcpsocket_listen(self.address, port: Int32(self.port))
         if fd > 0 {
@@ -161,13 +161,13 @@ open class TCPServer: Socket {
         
         let client = TCPClient(address: address, port: port)
         client.fd = clientfd
-            
+        
         return client
     }
     
     open func close() {
         guard let fd: Int32=self.fd else { return }
-      
+        
         _ = c_ytcpsocket_close(fd)
         self.fd = nil
     }
