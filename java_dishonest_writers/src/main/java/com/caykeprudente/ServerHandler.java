@@ -314,6 +314,7 @@ public class ServerHandler implements Runnable {
         }
         else {
             String data_signature = MySignature.signData(MySignature.getPrivateKey(server.id, -1d), variable+timestamp);
+            server.last_echoed_values.add(new Pair<Integer, String>(timestamp, variable));
 
             server.lock.lock();
             HashMap<String, Object> dataDict = new HashMap<String, Object>();

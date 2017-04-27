@@ -200,6 +200,7 @@ class Server(object):
 
         else:
             data_signature = Signature.signData(Signature.getPrivateKey(self.ID, -1), variable + str(timestamp))
+            self.LAST_ECHOED_VALUES.append((timestamp, variable))
 
             with self.LOCK:
                 dataDict = dict(data_signature = data_signature)

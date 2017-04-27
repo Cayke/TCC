@@ -344,6 +344,8 @@ namespace server{
             
             std::string data_signature = signData(ID, variable + std::to_string(timestamp));
             
+            LAST_ECHOED_VALUES.push_back(std::make_pair(timestamp, variable));
+            
             rapidjson::Document response;
             response.SetObject();
             

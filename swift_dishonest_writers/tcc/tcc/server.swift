@@ -212,6 +212,9 @@ class Server: NSObject {
         else {
             let message = variable + String(timestamp)
             let data_signature = String(cString:signData(String(self.ID), message, Int32(message.characters.count)))
+            
+            self.LAST_ECHOED_VALUES.append((timestamp, variable))
+            
             let dataDict = [Define.data_signature: data_signature] as [String : Any]
             let response = [Define.server_id: self.ID,
                             "plataform": Define.plataform,
