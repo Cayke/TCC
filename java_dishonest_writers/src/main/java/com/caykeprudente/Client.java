@@ -28,6 +28,8 @@ public class Client {
     List<Pair<Integer, String>> echoes; //armazena as assinaturas dos servidores (server_id, data_signature)
     List<Pair<String, Integer>> out_dated_servers;
 
+    int increment_timestamp_by = 1;
+
     Semaphore semaphore = new Semaphore(0);
     Lock lock_print = new ReentrantLock();
 
@@ -118,6 +120,10 @@ public class Client {
             request_code++;
         }
         else {
+            lock.lock();
+            increment_timestamp_by++;
+            lock.unlock();
+
             lock_print.lock();
             System.out.println("Nao foi possivel fazer a escrita");
             lock_print.unlock();
@@ -353,7 +359,7 @@ public class Client {
     return: (int) Incremented timestamp
     */
     private Double incrementTimestamp(Double timestamp) {
-        return timestamp+1;
+        return timestamp + increment_timestamp_by;
     }
 
 

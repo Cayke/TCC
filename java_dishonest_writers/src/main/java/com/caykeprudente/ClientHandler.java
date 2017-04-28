@@ -75,6 +75,7 @@ public class ClientHandler implements Runnable {
             request.put( "type", Define.write);
         else
             request.put( "type", Define.write_back);
+
         request.put( "timestamp", data.timestamp.intValue());
         request.put( "variable", data.value);
         request.put( "request_code", data.request_code.intValue());
@@ -100,16 +101,20 @@ public class ClientHandler implements Runnable {
         }
 
 
-            String status = (String) messageFromServer.get(Define.status);
-            if (status.equals(Define.success)) {
-                client.lock_print.lock();
-                System.out.println("Variable updated");
-                client.lock_print.unlock();
-            } else {
-                client.lock_print.lock();
-                System.out.println("Error updating");
-                client.lock_print.unlock();
-            }
+        String status = (String) messageFromServer.get(Define.status);
+        if (status.equals(Define.success)) {
+            client.lock.lock();
+            client.increment_timestamp_by = 1;
+            client.lock.unlock();
+
+            client.lock_print.lock();
+            System.out.println("Variable updated");
+            client.lock_print.unlock();
+        } else {
+            client.lock_print.lock();
+            System.out.println("Error updating");
+            client.lock_print.unlock();
+        }
     }
 
     /*

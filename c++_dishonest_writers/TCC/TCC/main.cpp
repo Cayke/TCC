@@ -13,7 +13,8 @@
 
 int main(int argc, const char * argv[]) {
     // insert code here...
-    server::init(0, "localhost", 5000);
+    int id = 0;
+    server::init(id, "localhost", 5000 + id);
 
 
     return 0;

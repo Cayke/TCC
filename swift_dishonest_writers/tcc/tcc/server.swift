@@ -80,6 +80,7 @@ class Server: NSObject {
         
         getRequestStatus(request: request!, clientSocket: clientSocket)
         
+        clientSocket.close()
         print("matando thread")
     }
     
@@ -140,31 +141,33 @@ class Server: NSObject {
         pthread_mutex_lock(&self.LOCK)
         if timestamp > self.TIMESTAMP {
             if (isEchoValid(echoes: echoes, value: variable, timestamp: timestamp, type: type)) {
-                
-                print ("Recebido variable = \(variable) e timestamp = \(timestamp)")
-                
                 self.VARIABLE = variable
                 self.TIMESTAMP = timestamp
                 let message = variable + String(timestamp)
                 self.DATA_SIGNATURE = String(cString:signData(String(self.ID), message, Int32(message.characters.count)))
                 self.LAST_ECHOED_VALUES = []
                 
+                pthread_mutex_unlock(&self.LOCK)
+                
+                print ("Recebido variable = \(variable) e timestamp = \(timestamp)")
+                
                 let response = [Define.server_id: self.ID,
                                 "plataform": Define.plataform,
                                 Define.request_code: request[Define.request_code] as! Int,
                                 Define.status: Define.success,
                                 Define.msg: Define.variable_updated] as Dictionary<String, Any>
-                pthread_mutex_unlock(&self.LOCK)
+                
                 
                 sendResponse(response: response, clientSocket: clientSocket)
             }
             else {
+                pthread_mutex_unlock(&self.LOCK)
+                
                 let response = [Define.server_id: self.ID,
                                 "plataform": Define.plataform,
                                 Define.request_code: request[Define.request_code] as! Int,
                                 Define.status: Define.error,
                                 Define.msg: Define.invalid_echoes] as Dictionary<String, Any>
-                pthread_mutex_unlock(&self.LOCK)
                 
                 sendResponse(response: response, clientSocket: clientSocket)
             }
@@ -210,10 +213,12 @@ class Server: NSObject {
             sendResponse(response: response, clientSocket: clientSocket)
         }
         else {
+            pthread_mutex_lock(&self.LOCK)
+            self.LAST_ECHOED_VALUES.append((timestamp, variable))
+            pthread_mutex_unlock(&self.LOCK)
+            
             let message = variable + String(timestamp)
             let data_signature = String(cString:signData(String(self.ID), message, Int32(message.characters.count)))
-            
-            self.LAST_ECHOED_VALUES.append((timestamp, variable))
             
             let dataDict = [Define.data_signature: data_signature] as [String : Any]
             let response = [Define.server_id: self.ID,
@@ -235,14 +240,18 @@ class Server: NSObject {
      return: (bool) If server should echo value and timestamp
      */
     func shouldEcho(variable: String, timestamp : Int) -> Bool {
+        pthread_mutex_lock(&self.LOCK)
         for (time, value) in self.LAST_ECHOED_VALUES {
             if time == timestamp && !(value == variable) {
+                pthread_mutex_unlock(&self.LOCK)
                 return false;
             }
             else if time == timestamp && value == variable {
+                pthread_mutex_unlock(&self.LOCK)
                 return true;
             }
         }
+        pthread_mutex_unlock(&self.LOCK)
         return true;
     }
     
@@ -283,13 +292,14 @@ class Server: NSObject {
         let dataDict = [Define.variable: self.VARIABLE,
                         Define.timestamp: self.TIMESTAMP,
                         Define.data_signature: self.DATA_SIGNATURE] as [String : Any]
+        pthread_mutex_unlock(&self.LOCK)
+        
         let response = [Define.server_id: self.ID,
                         "plataform": Define.plataform,
                         Define.request_code: request[Define.request_code] as! Int,
                         Define.status: Define.success,
                         Define.msg: Define.read,
                         Define.data: dataDict] as Dictionary<String, Any>
-        pthread_mutex_unlock(&self.LOCK)
         
         sendResponse(response: response, clientSocket: clientSocket)
     }
@@ -303,13 +313,14 @@ class Server: NSObject {
     func readTimestamp (request: Dictionary<String, Any>, clientSocket: TCPClient) {
         pthread_mutex_lock(&self.LOCK)
         let dataDict = [Define.timestamp: self.TIMESTAMP]
+        pthread_mutex_unlock(&self.LOCK)
+        
         let response = [Define.server_id: self.ID,
                         "plataform": Define.plataform,
                         Define.request_code: request[Define.request_code] as! Int,
                         Define.status: Define.success,
                         Define.msg: Define.read,
                         Define.data: dataDict] as Dictionary<String, Any>
-        pthread_mutex_unlock(&self.LOCK)
         
         sendResponse(response: response, clientSocket: clientSocket)
     }

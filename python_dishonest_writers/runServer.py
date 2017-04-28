@@ -1,4 +1,4 @@
 from server import Server
 
-id = 2
+id = 1
 Server(id, 'localhost', 5000 + id)

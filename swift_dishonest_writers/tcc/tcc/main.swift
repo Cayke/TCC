@@ -8,5 +8,5 @@
 
 import Foundation
 
-let id = 1
+let id = 0
 Server(id: id, ip: "127.0.0.1", port: 5000 + id).waitForConnection()

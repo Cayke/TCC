@@ -45,16 +45,13 @@ public class ServerHandler implements Runnable {
     public void run() {
         System.out.println("Novo cliente conectado, nova thread criada");
 
-        boolean shouldContinue = true;
-        while (shouldContinue) {
-            String jsonMessage = readInputStream();
-            if (jsonMessage != null) {
-                HashMap<String, Object> request = new GsonBuilder().create().fromJson(jsonMessage, HashMap.class);
+        Boolean success = false;
 
-                shouldContinue = getRequestStatus(request);
-            }
-            else
-                shouldContinue = false;
+        String jsonMessage = readInputStream();
+        if (jsonMessage != null) {
+            HashMap<String, Object> request = new GsonBuilder().create().fromJson(jsonMessage, HashMap.class);
+
+            success = getRequestStatus(request);
         }
 
         try {
@@ -63,7 +60,10 @@ public class ServerHandler implements Runnable {
             e.printStackTrace();
         }
 
-        System.out.println("matando thread");
+        if (success)
+            System.out.println("matando thread, operacao feita com sucesso");
+        else
+            System.out.println("matando thread, operacao nao obteve sucesso");
     }
 
 
@@ -109,14 +109,7 @@ public class ServerHandler implements Runnable {
         else if (type.equals(Define.get_echoe))
             return getEchoe(request);
 
-        else if (type.equals(Define.bye)) {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return true;
-        } else {
+        else {
             HashMap<String, Object> dictionary = new HashMap<String, Object>();
             dictionary.put(Define.server_id, server.id.intValue());
             dictionary.put("plataform", Define.plataform);
@@ -151,23 +144,20 @@ public class ServerHandler implements Runnable {
     */
     private boolean read(HashMap request) {
         server.lock.lock();
-        HashMap<String, Object> response = new HashMap<String, Object>();
-        try {
-            HashMap<String, Object> dataDict = new HashMap<String, Object>();
-            dataDict.put(Define.variable, server.variable);
-            dataDict.put(Define.timestamp, server.timestamp);
-            dataDict.put(Define.data_signature, server.data_signature);
+        HashMap<String, Object> dataDict = new HashMap<String, Object>();
+        dataDict.put(Define.variable, server.variable);
+        dataDict.put(Define.timestamp, server.timestamp);
+        dataDict.put(Define.data_signature, server.data_signature);
+        server.lock.unlock();
 
-            response.put(Define.server_id, server.id.intValue());
-            response.put("plataform", Define.plataform);
-            response.put(Define.request_code, request.get(Define.request_code));
-            response.put(Define.status, Define.success);
-            response.put(Define.msg, Define.read);
-            response.put(Define.data, dataDict);
-        }
-        finally {
-            server.lock.unlock();
-        }
+        HashMap<String, Object> response = new HashMap<String, Object>();
+        response.put(Define.server_id, server.id.intValue());
+        response.put("plataform", Define.plataform);
+        response.put(Define.request_code, request.get(Define.request_code));
+        response.put(Define.status, Define.success);
+        response.put(Define.msg, Define.read);
+        response.put(Define.data, dataDict);
+
 
         try {
             sendMessageToClient(response);
@@ -184,21 +174,17 @@ public class ServerHandler implements Runnable {
     */
     private boolean readTimestamp(HashMap request) {
         server.lock.lock();
-        HashMap<String, Object> response = new HashMap<String, Object>();
-        try {
-            HashMap<String, Object> dataDict = new HashMap<String, Object>();
-            dataDict.put(Define.timestamp, server.timestamp);
+        HashMap<String, Object> dataDict = new HashMap<String, Object>();
+        dataDict.put(Define.timestamp, server.timestamp);
+        server.lock.unlock();
 
+        HashMap<String, Object> response = new HashMap<String, Object>();
             response.put(Define.server_id, server.id.intValue());
             response.put("plataform", Define.plataform);
             response.put(Define.request_code, request.get(Define.request_code));
             response.put(Define.status, Define.success);
             response.put(Define.msg, Define.read_timestamp);
             response.put(Define.data, dataDict);
-        }
-        finally {
-            server.lock.unlock();
-        }
 
         try {
             sendMessageToClient(response);
@@ -227,12 +213,14 @@ public class ServerHandler implements Runnable {
         if (timestamp > server.timestamp)
         {
             if (isEchoValid(echoes, variable, timestamp, type)) {
-                System.out.println("Recebido variable = " + variable + " e timestamp " + timestamp);
-
                 server.variable = variable;
                 server.timestamp = timestamp;
                 server.data_signature = MySignature.signData(MySignature.getPrivateKey(server.id, -1d), variable+timestamp);
                 server.last_echoed_values = new ArrayList<Pair<Integer, String>>();
+
+                server.lock.unlock();
+
+                System.out.println("Recebido variable = " + variable + " e timestamp " + timestamp);
 
                 HashMap<String, Object> response = new HashMap<String, Object>();
                 response.put(Define.server_id, server.id.intValue());
@@ -240,8 +228,6 @@ public class ServerHandler implements Runnable {
                 response.put(Define.request_code, request.get(Define.request_code));
                 response.put(Define.status, Define.success);
                 response.put(Define.msg, Define.variable_updated);
-
-                server.lock.unlock();
 
                 try {
                     sendMessageToClient(response);
@@ -251,14 +237,14 @@ public class ServerHandler implements Runnable {
                 }
             }
             else {
+                server.lock.unlock();
+
                 HashMap<String, Object> response = new HashMap<String, Object>();
                 response.put(Define.server_id, server.id.intValue());
                 response.put("plataform", Define.plataform);
                 response.put(Define.request_code, request.get(Define.request_code));
                 response.put(Define.status, Define.error);
                 response.put(Define.msg, Define.invalid_echoes);
-
-                server.lock.unlock();
 
                 try {
                     sendMessageToClient(response);
@@ -314,9 +300,11 @@ public class ServerHandler implements Runnable {
         }
         else {
             String data_signature = MySignature.signData(MySignature.getPrivateKey(server.id, -1d), variable+timestamp);
-            server.last_echoed_values.add(new Pair<Integer, String>(timestamp, variable));
 
             server.lock.lock();
+            server.last_echoed_values.add(new Pair<Integer, String>(timestamp, variable));
+            server.lock.unlock();
+
             HashMap<String, Object> dataDict = new HashMap<String, Object>();
             dataDict.put(Define.data_signature, data_signature);
 
@@ -326,7 +314,6 @@ public class ServerHandler implements Runnable {
             response.put(Define.status, Define.success);
             response.put(Define.msg, Define.read);
             response.put(Define.data, dataDict);
-            server.lock.unlock();
         }
 
         try {
@@ -345,12 +332,18 @@ public class ServerHandler implements Runnable {
     return: (bool) If server should echo value and timestamp
      */
     public boolean shouldEcho(String value, int timestamp) {
+        server.lock.lock();
         for (Pair<Integer, String> pair : server.last_echoed_values) {
-            if (pair.fst == timestamp && !pair.snd.equals(value))
+            if (pair.fst == timestamp && !pair.snd.equals(value)) {
+                server.lock.unlock();
                 return false;
-            else if (pair.fst == timestamp && pair.snd.equals(value))
+            }
+            else if (pair.fst == timestamp && pair.snd.equals(value)) {
+                server.lock.unlock();
                 return true;
+            }
         }
+        server.lock.unlock();
         return true;
     }
 

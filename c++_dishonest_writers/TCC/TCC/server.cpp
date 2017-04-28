@@ -112,14 +112,14 @@ namespace server{
         if (n < 0)
             error("ERROR reading from socket");
         
-        printf("Here is the message: %s\n",data);
+        //printf("Here is the message: %s\n",data);
         
         rapidjson::Document doc = parseJsonStringToDocument(data);
         getRequestStatus(&doc,socketTCPThread);
         
         close(socketTCPThread);
         
-        std::cout << "matando thread";
+        std::cout << "matando thread\n";
     }
     
     
@@ -139,10 +139,6 @@ namespace server{
             readTimestamp(request, socketTCP);
         else if (type == Define::get_echoe)
             getEchoe(request, socketTCP);
-        else if (type == Define::bye) {
-            close(socketTCP);
-            std::cout << "Cliente desconectou propositalmente";
-        }
         else {
             rapidjson::Document document;
             document.SetObject();
@@ -250,14 +246,16 @@ namespace server{
      */
     void readData(rapidjson::Document *request, int socketTCP)
     {
-        LOCK.lock();
         rapidjson::Document response;
         response.SetObject();
         
         rapidjson::Value dataDict(rapidjson::kObjectType);
+        
+        LOCK.lock();
         addValueToValueStruct(&dataDict, &response, Define::variable, VARIABLE);
         addValueToValueStruct(&dataDict, &response, Define::timestamp, TIMESTAMP);
         addValueToValueStruct(&dataDict, &response, Define::data_signature, DATA_SIGNATURE);
+        LOCK.unlock();
         
         addValueToDocument(&response, Define::data, &dataDict);
         addValueToDocument(&response, Define::server_id, ID);
@@ -267,7 +265,7 @@ namespace server{
         addValueToDocument(&response, Define::msg, Define::read);
         
         std::string responseJSON = getJSONStringForDocument(&response);
-        LOCK.unlock();
+
         sendResponse(responseJSON, socketTCP);
     }
     
@@ -279,12 +277,14 @@ namespace server{
      */
     void readTimestamp(rapidjson::Document *request, int socketTCP)
     {
-        LOCK.lock();
         rapidjson::Document response;
         response.SetObject();
         
         rapidjson::Value dataDict(rapidjson::kObjectType);
+        
+        LOCK.lock();
         addValueToValueStruct(&dataDict, &response, Define::timestamp, TIMESTAMP);
+        LOCK.unlock();
         
         addValueToDocument(&response, Define::data, &dataDict);
         addValueToDocument(&response, Define::server_id, ID);
@@ -294,7 +294,7 @@ namespace server{
         addValueToDocument(&response, Define::msg, Define::read);
         
         std::string responseJSON = getJSONStringForDocument(&response);
-        LOCK.unlock();
+        
         sendResponse(responseJSON, socketTCP);
     }
     
@@ -308,10 +308,7 @@ namespace server{
         std::string variable = getStringWithKeyFromDocument(request, Define::variable);
         int timestamp = getIntWithKeyFromDocument(request, Define::timestamp);
         
-        LOCK.lock();
         if (timestamp < TIMESTAMP) {
-            LOCK.unlock();
-            
             rapidjson::Document document;
             document.SetObject();
             
@@ -325,8 +322,6 @@ namespace server{
             sendResponse(responseJSON, socketTCP);
         }
         else if (!shouldEcho(variable, timestamp)) {
-            LOCK.unlock();
-            
             rapidjson::Document document;
             document.SetObject();
             
@@ -340,11 +335,11 @@ namespace server{
             sendResponse(responseJSON, socketTCP);
         }
         else {
+            LOCK.lock();
+            LAST_ECHOED_VALUES.push_back(std::make_pair(timestamp, variable));
             LOCK.unlock();
             
             std::string data_signature = signData(ID, variable + std::to_string(timestamp));
-            
-            LAST_ECHOED_VALUES.push_back(std::make_pair(timestamp, variable));
             
             rapidjson::Document response;
             response.SetObject();
@@ -373,14 +368,19 @@ namespace server{
     return: (bool) If server should echo value and timestamp
     */
     bool shouldEcho(std::string value, int timestamp) {
+        LOCK.lock();
         for(std::vector<std::pair<int, std::string>>::const_iterator iterator = LAST_ECHOED_VALUES.begin() ; iterator < LAST_ECHOED_VALUES.end(); iterator ++) {
             std::pair<int, std::string> tuple = *iterator;
-            if (tuple.first == TIMESTAMP && tuple.second != value)
+            if (tuple.first == TIMESTAMP && tuple.second != value) {
+                LOCK.unlock();
                 return false;
-            else if (tuple.first == TIMESTAMP && tuple.second == value)
+            }
+            else if (tuple.first == TIMESTAMP && tuple.second == value){
+                LOCK.unlock();
                 return true;
+            }
         }
-        
+        LOCK.unlock();
         return true;
     }
     

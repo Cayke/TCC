@@ -19,6 +19,7 @@ class Client ():
     ECHOES = [] # armazena as assinaturas dos servidores (server_id, data_signature)
     OUT_DATED_SERVERS = []
 
+    INCREMENT_TIMESTAMP_BY = 1
 
     SEMAPHORE = threading.Semaphore(0)
     LOCK_PRINT = threading.Lock()
@@ -97,6 +98,9 @@ class Client ():
             self.REQUEST_CODE = self.REQUEST_CODE + 1
 
         else:
+            with self.LOCK:
+                self.INCREMENT_TIMESTAMP_BY = self.INCREMENT_TIMESTAMP_BY + 1
+
             with self.LOCK_PRINT:
                 print('Nao foi possivel fazer a escrita')
 
@@ -268,8 +272,11 @@ class Client ():
             messageFromServerJSON, server = TCPSocket.recvfrom(2048)
             messageFromServer = json.loads(messageFromServerJSON.decode('utf-8'))
             if messageFromServer[Define.status] == Define.success:
+                with self.LOCK:
+                    self.INCREMENT_TIMESTAMP_BY = 1
+
                 with self.LOCK_PRINT:
-                    print('Variable updated')
+                    print('Variable updated on server ' + str(messageFromServer[Define.server_id]))
             else:
                 with self.LOCK_PRINT:
                     print('Error updating')
@@ -446,7 +453,7 @@ class Client ():
     return: (int) Incremented timestamp
     '''
     def incrementTimestamp(self, serverTimestamp):
-        return serverTimestamp+1
+        return serverTimestamp + self.INCREMENT_TIMESTAMP_BY
 
 
     '''
