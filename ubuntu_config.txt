@@ -1,0 +1,41 @@
+CONFIG FILE FOR UBUNTU 14.04
+
+
+******INSTALL JAVA******
+$ sudo apt-get install default-jre
+
+Configurar variavel de ambiente
+$ sudo update-alternatives --config java
+
+Copie o caminho da sua instalação preferencial e abra o arquivo /etc/environment utilizando o nano ou o seu editor de texto favorito.
+$ sudo nano /etc/environment
+
+Ao final desse arquivo, adicione a seguinte linha, certificando-se de trocar o caminho destacado pelo seu caminho copiado.
+JAVA_HOME="path do java"
+
+$ source /etc/environment
+$ echo $JAVA_HOME
+
+
+******INSTALL SWIFT******
+$ wget https://swift.org/builds/swift-3.1.1-release/ubuntu1404/swift-3.1.1-RELEASE/swift-3.1.1-RELEASE-ubuntu14.04.tar.gz
+$ tar -xzf swift-3.1.1-RELEASE-ubuntu14.04.tar.gz
+$ cd swift-3.1.1-RELEASE-ubuntu14.04/
+$ cd usr/bin
+$ pwd
+
+Get result from pwd as "path_to_swift_usr_bin" 
+export PATH=path_to_swift_usr_bin/:"$PATH"
+
+ 
+$ sudo apt-get install clang libicu-dev
+
+
+******INSTALL PYTHON******
+$ wget --no-check-certificate https://www.python.org/ftp/python/3.5.1/$ Python-3.5.1.tgz
+$ tar -xzf Python-3.5.1.tgz
+$ cd Python-3.5.1.tgz
+$ ./configure
+$ make
+$ make test
+$ sudo make install
