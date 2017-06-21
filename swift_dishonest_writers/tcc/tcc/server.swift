@@ -144,7 +144,10 @@ class Server: NSObject {
                 self.VARIABLE = variable
                 self.TIMESTAMP = timestamp
                 let message = variable + String(timestamp)
-                self.DATA_SIGNATURE = String(cString:signData(String(self.ID), message, Int32(message.characters.count)))
+                guard let data_signature = signature.signData(server_id: self.ID, message: message) else {
+                    return
+                }
+                self.DATA_SIGNATURE = data_signature
                 self.LAST_ECHOED_VALUES = []
                 
                 pthread_mutex_unlock(&self.LOCK)
@@ -218,7 +221,7 @@ class Server: NSObject {
             pthread_mutex_unlock(&self.LOCK)
             
             let message = variable + String(timestamp)
-            let data_signature = String(cString:signData(String(self.ID), message, Int32(message.characters.count)))
+            let data_signature = signature.signData(server_id: self.ID, message: message)
             
             let dataDict = [Define.data_signature: data_signature] as [String : Any]
             let response = [Define.server_id: self.ID,
@@ -268,7 +271,7 @@ class Server: NSObject {
         var validEchoes = 0
         for (server_id, data_sign) in echoes {
             let data = value+String(timestamp)
-            if verifySignature(String(server_id), data, Int32(data.characters.count), data_sign) {
+            if signature.verifySignature(server_id: server_id, originalMessage: data, signature: data_sign) {
                 validEchoes = validEchoes + 1
             }
         }
