@@ -25,11 +25,10 @@ $ cd usr/bin
 $ pwd
 
 Get result from pwd as "path_to_swift_usr_bin" 
-export PATH=path_to_swift_usr_bin/:"$PATH"
+$ export PATH=path_to_swift_usr_bin/:"$PATH"
 
  
 $ sudo apt-get install clang libicu-dev
-
 
 ******INSTALL PYTHON******
 $ wget --no-check-certificate https://www.python.org/ftp/python/3.5.1/$ Python-3.5.1.tgz
@@ -39,3 +38,18 @@ $ ./configure
 $ make
 $ make test
 $ sudo make install
+
+install PYCRYPTODOME
+$sudo pip install PYCRYPTODOME
+
+
+
+******EXECUCAO******
+    - C: gera executavel
+    - PYTHON: rodar a classe no python via terminal
+    - SWIFT: gera executavel
+        - transformar .c em .o com “$gcc -c arquivo.c”
+        - compilar tudo usando “swiftc arquivo1.swfit arquivo2.swift …. arquivoc.o”
+    - JAVA: roda no java via terminal
+        - gerar o .class usando o intellij - path no mac /OneDrive/unb/TCC/Dev/java_honest_writers/target/classes/com/caykeprudente
+        - rodar usando $ java -cp meuprograma.jar:dependecia.jar “classe principal”
