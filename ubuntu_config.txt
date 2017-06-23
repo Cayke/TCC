@@ -25,7 +25,7 @@ $ cd usr/bin
 $ pwd
 
 Get result from pwd as "path_to_swift_usr_bin" 
-$ export PATH=path_to_swift_usr_bin/:"$PATH"
+$ export PATH=path_to_swift_usr_bin/:"${PATH}"
 
  
 $ sudo apt-get install clang libicu-dev
