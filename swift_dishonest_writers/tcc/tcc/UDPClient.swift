@@ -98,13 +98,13 @@ open class UDPClient: Socket {
      *
      * send nsdata
      */
-    open func send(data: Data) -> Result {
+    open func send(data: NSData) -> Result {
         guard let fd = self.fd else { return .failure(SocketError.connectionClosed) }
         
-        var buff = [Byte](repeating: 0x0,count: data.count)
-        (data as NSData).getBytes(&buff, length: data.count)
-        let sendsize = c_yudpsocket_sentto(fd, buff: buff, len: Int32(data.count), ip: address, port: port)
-        if sendsize == Int32(data.count) {
+        var buff = [Byte](repeating: 0x0,count: data.length)
+        data.getBytes(&buff, length: data.length)
+        let sendsize = c_yudpsocket_sentto(fd, buff: buff, len: Int32(data.length), ip: address, port: port)
+        if sendsize == Int32(data.length) {
             return .success
         } else {
             return .failure(SocketError.unknownError)

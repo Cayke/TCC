@@ -107,13 +107,13 @@ open class TCPClient: Socket {
      *
      * send nsdata
      */
-    open func send(data: Data) -> Result {
+    open func send(data: NSData) -> Result {
         guard let fd = self.fd else { return .failure(SocketError.connectionClosed) }
         
-        var buff = [Byte](repeating: 0x0,count: data.count)
-        data.bridge().getBytes(&buff, length: data.count)
-        let sendsize = c_ytcpsocket_send(fd, buff: buff, len: Int32(data.count))
-        if sendsize == Int32(data.count) {
+        var buff = [Byte](repeating: 0x0,count: data.length)
+        data.getBytes(&buff, length: data.length)
+        let sendsize = c_ytcpsocket_send(fd, buff: buff, len: Int32(data.length))
+        if sendsize == Int32(data.length) {
             return .success
         } else {
             return .failure(SocketError.unknownError)

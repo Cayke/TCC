@@ -207,9 +207,11 @@ class Server: NSObject {
     func sendResponse(response: Dictionary<String, Any>, clientSocket: TCPClient)
     {
         do{
-            let responseJSON = try JSONSerialization.data(withJSONObject: response, options: .prettyPrinted)
+            let responseJSONData = try JSONSerialization.data(withJSONObject: response, options: .prettyPrinted)
+            let responseJSONString = String(data: responseJSONData, encoding: .utf8)
             
-            clientSocket.send(data: responseJSON)
+            
+            clientSocket.send(string: responseJSONString!)
         }
         catch {
             print (error.localizedDescription)
