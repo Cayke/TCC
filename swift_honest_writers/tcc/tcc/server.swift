@@ -48,9 +48,10 @@ class Server: NSObject {
         case .success:
             while true {
                 if let clientSocket = serverSocket.accept() {
-                    DispatchQueue.global(qos: .background).async {
+                    let thread = Thread(block: {
                         self.clientConnected(clientSocket: clientSocket)
-                        }
+                    })
+                    thread.start()
                 } else {
                     print("accept error")
                 }
