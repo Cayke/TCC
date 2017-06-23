@@ -9,9 +9,11 @@
 import Foundation
 
 extension Data {
-#if !os(Linux)
     func bridge() -> NSData {
-        return self as NSData
+    	#if os(Linux)
+    		return NSData(base64Encoded: self, options: .init(rawValue: 0))!
+    	#else
+        	return self as! NSData
+        #endif
     }
-#endif
 }
