@@ -76,6 +76,9 @@ class Server: NSObject {
         let request = try? JSONSerialization.jsonObject(with: (requestJSON?.data(using: .utf8))!) as! [String:Any]
         
         getRequestStatus(request: request!, clientSocket: clientSocket)
+        
+        clientSocket.close()
+        print("matando thread")
     }
     
     
@@ -102,11 +105,11 @@ class Server: NSObject {
             return
         }
         else {
-            let response = [Define.server_id: self.ID,
-                            "plataform": Define.plataform,
-                            Define.request_code: request[Define.request_code],
-                            Define.status: Define.error,
-                            Define.msg: Define.undefined_type]
+            let response : JSON = [Define.server_id: JSON(self.ID),
+                            "plataform": JSON(Define.plataform),
+                            Define.request_code: JSON(request[Define.request_code] as! Int),
+                            Define.status: JSON(Define.error),
+                            Define.msg: JSON(Define.undefined_type)]
             
             sendResponse(response: response, clientSocket: clientSocket)
         }
@@ -133,11 +136,11 @@ class Server: NSObject {
             self.DATA_SIGNATURE = signature
             self.CLIENT_ID = client_id
             
-            let response = [Define.server_id: self.ID,
-                            "plataform": Define.plataform,
-                            Define.request_code: request[Define.request_code],
-                            Define.status: Define.success,
-                            Define.msg: Define.variable_updated]
+            let response :JSON = [Define.server_id: JSON(self.ID),
+                            "plataform": JSON(Define.plataform),
+                            Define.request_code: JSON(request[Define.request_code] as! Int),
+                            Define.status: JSON(Define.success),
+                            Define.msg: JSON(Define.variable_updated)]
             pthread_mutex_unlock(&self.LOCK)
             
             sendResponse(response: response, clientSocket: clientSocket)
@@ -145,11 +148,11 @@ class Server: NSObject {
         else {
             pthread_mutex_unlock(&self.LOCK)
             
-            let response = [Define.server_id: self.ID,
-                            "plataform": Define.plataform,
-                            Define.request_code: request[Define.request_code],
-                            Define.status: Define.error,
-                            Define.msg: Define.outdated_timestamp]
+            let response :JSON = [Define.server_id: JSON(self.ID),
+                            "plataform": JSON(Define.plataform),
+                            Define.request_code: JSON(request[Define.request_code] as! Int),
+                            Define.status: JSON(Define.error),
+                            Define.msg: JSON(Define.outdated_timestamp)]
             
             sendResponse(response: response, clientSocket: clientSocket)
         }
@@ -163,15 +166,15 @@ class Server: NSObject {
      */
     func read (request: Dictionary<String, Any>, clientSocket: TCPClient) {
         pthread_mutex_lock(&self.LOCK)
-        let dataDict = [Define.variable: self.VARIABLE,
-                        Define.timestamp: self.TIMESTAMP,
-                        Define.data_signature: self.DATA_SIGNATURE,
-                        Define.client_id: self.CLIENT_ID] as [String : Any]
-        let response = [Define.server_id: self.ID,
-                        "plataform": Define.plataform,
-                        Define.request_code: request[Define.request_code],
-                        Define.status: Define.success,
-                        Define.msg: Define.read,
+        let dataDict : JSON = [Define.variable: JSON(self.VARIABLE),
+                        Define.timestamp: JSON(self.TIMESTAMP),
+                        Define.data_signature: JSON(self.DATA_SIGNATURE),
+                        Define.client_id: JSON(self.CLIENT_ID)]
+        let response : JSON = [Define.server_id: JSON(self.ID),
+                        "plataform": JSON(Define.plataform),
+                        Define.request_code: JSON(request[Define.request_code] as! Int),
+                        Define.status: JSON(Define.success),
+                        Define.msg: JSON(Define.read),
                         Define.data: dataDict]
         pthread_mutex_unlock(&self.LOCK)
         
@@ -186,12 +189,12 @@ class Server: NSObject {
      */
     func readTimestamp (request: Dictionary<String, Any>, clientSocket: TCPClient) {
         pthread_mutex_lock(&self.LOCK)
-        let dataDict = [Define.timestamp: self.TIMESTAMP]
-        let response = [Define.server_id: self.ID,
-                        "plataform": Define.plataform,
-                        Define.request_code: request[Define.request_code],
-                        Define.status: Define.success,
-                        Define.msg: Define.read,
+        let dataDict : JSON = [Define.timestamp: JSON(self.TIMESTAMP)]
+        let response : JSON = [Define.server_id: JSON(self.ID),
+                        "plataform": JSON(Define.plataform),
+                        Define.request_code: JSON(request[Define.request_code] as! Int),
+                        Define.status: JSON(Define.success),
+                        Define.msg: JSON(Define.read_timestamp),
                         Define.data: dataDict]
         pthread_mutex_unlock(&self.LOCK)
         
@@ -204,17 +207,10 @@ class Server: NSObject {
      param: responseJSON - A message in JSON format
      param: socketTCP - Socket that has been created for the pair (Server, Client)
      */
-    func sendResponse(response: Dictionary<String, Any>, clientSocket: TCPClient)
+    func sendResponse(response: JSON, clientSocket: TCPClient)
     {
-        do{
-            let responseJSONData = try JSONSerialization.data(withJSONObject: response, options: .prettyPrinted)
-            let responseJSONString = String(data: responseJSONData, encoding: .utf8)
+            let responseJSONString = response.dump()
             
-            
-            clientSocket.send(string: responseJSONString!)
-        }
-        catch {
-            print (error.localizedDescription)
-        }
+            _ = clientSocket.send(string: responseJSONString)
     }
 }
