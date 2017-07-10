@@ -31,7 +31,7 @@ $ export PATH=path_to_swift_usr_bin/:"${PATH}"
 $ sudo apt-get install clang libicu-dev
 
 ******INSTALL PYTHON******
-$ wget --no-check-certificate https://www.python.org/ftp/python/3.5.1/$ Python-3.5.1.tgz
+$ wget --no-check-certificate https://www.python.org/ftp/python/3.5.1/Python-3.5.1.tgz
 $ tar -xzf Python-3.5.1.tgz
 $ cd Python-3.5.1.tgz
 $ ./configure
