@@ -8,4 +8,5 @@
 
 import Foundation
 
-Server(id: 0, ip: "127.0.0.1", port: 5000).waitForConnection();
+let arguments = CommandLine.arguments
+Server(id: 0, ip: arguments[1], port: 5000).waitForConnection();
