@@ -10,11 +10,17 @@ public class Main {
 
     public static void main(String[] args) {
 	    // write your code here
-        runClient();
+        //runClient();
+        runServer(args);
     }
 
-    private static void runServer() {
-        Server server = new Server(0, "localhost", 5000);
+    private static void runServer(String[] args) {
+        if (args.length < 2) {
+            System.out.println("Numero de argumentos invalidos");
+            return;
+        }
+
+        Server server = new Server(0, args[1], 5000);
         try {
             server.waitForConnection();
         } catch (IOException e) {
