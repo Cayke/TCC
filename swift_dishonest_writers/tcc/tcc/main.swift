@@ -8,5 +8,10 @@
 
 import Foundation
 
-let id = 0
-Server(id: id, ip: "127.0.0.1", port: 5000 + id).waitForConnection()
+let arguments = CommandLine.arguments
+if arguments.count < 2 {
+    print ("Numero de argumentos inválidos")
+}
+else {
+    Server(id: 0, ip: arguments[1], port: 5000).waitForConnection();
+}
