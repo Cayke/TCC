@@ -41,7 +41,10 @@ $ make test
 $ sudo make install
 
 install PYCRYPTODOME
-$ sudo pip install PYCRYPTODOME
+$ sudo pip3 install pycryptodome
+$ python3 -m Crypto.SelfTest
+
+OBS: la no emulab tem que executar o python com "$sudo su" antes, por causa da pasta de instalacao do pycryptodomex
 
 
 
