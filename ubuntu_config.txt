@@ -28,9 +28,7 @@ Get result from pwd as "path_to_swift_usr_bin"
 $ export PATH=path_to_swift_usr_bin/:"${PATH}"
 
  
-$ sudo apt-get install clang libicu-dev
-$ sudo apt-get install libcurl3
-$ sudo apt-get install libpython2.7
+$ sudo apt-get install clang libicu-dev libcurl3 libpython2.7
 
 
 ******INSTALL PYTHON******
@@ -43,7 +41,10 @@ $ make test
 $ sudo make install
 
 install PYCRYPTODOME
-$sudo pip install PYCRYPTODOME
+$ sudo pip3 install pycryptodome
+$ python3 -m Crypto.SelfTest
+
+OBS: la no emulab tem que executar o python com "$sudo su" antes, por causa da pasta de instalacao do pycryptodomex
 
 
 
@@ -55,4 +56,4 @@ $sudo pip install PYCRYPTODOME
         - compilar tudo usando “swiftc arquivo1.swfit arquivo2.swift …. arquivoc.o”
     - JAVA: roda no java via terminal
         - gerar o .class usando o intellij - path no mac /OneDrive/unb/TCC/Dev/java_honest_writers/target/classes/com/caykeprudente
-        - rodar usando $ java -cp meuprograma.jar:dependecia.jar “classe principal”
+        - rodar usando $ java -cp meuprograma.jar:dependecia.jar “com.caykeprudente.Main”

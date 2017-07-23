@@ -66,3 +66,5 @@ java_dishonest_writers/.idea
 java_dishonest_writers/target
 
 testClient.cpython-35.pyc
+python/Define.pyc
+python/server.pyc
