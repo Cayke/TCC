@@ -1,9 +1,5 @@
 CONFIG FILE FOR UBUNTU 14.04
 
-******INSTALL OPENSLL FOR C++******
-$ sudo apt-get install libssl-dev
-Add on project linker -lcrypto -lssl
-Add on project compiler -std=c++11
 
 ******INSTALL JAVA******
 $ sudo apt-get install default-jre

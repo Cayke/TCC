@@ -12,6 +12,7 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+#include <vector>
 
 rapidjson::Document parseJsonStringToDocument (std::string jsonString);
 int getIntWithKeyFromDocument(rapidjson::Document *document, std::string key);
