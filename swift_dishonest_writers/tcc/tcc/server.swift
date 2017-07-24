@@ -291,7 +291,7 @@ class Server: NSObject {
         for (server_id, data_sign) in echoes {
             let data = value+String(timestamp)
             //if signature.verifySignature(server_id: server_id, originalMessage: data, signature: data_sign) {
-            if verifySignature(String(server_id), data, Int32(data.characters.count), data_sign) {
+            if verifySignature(NSString(string: String(server_id)).utf8String, data, Int32(data.characters.count), data_sign) == 1 {
                 validEchoes = validEchoes + 1
             }
         }

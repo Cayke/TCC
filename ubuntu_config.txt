@@ -57,7 +57,7 @@ OBS: la no emulab tem que executar o python com "$sudo su" antes, por causa da p
     - PYTHON: rodar a classe no python via terminal
     - SWIFT: gerar executavel na minha maquina. Nao foi possivel gerar no servidor(deu erros). OBS: o swfit deve estar na pasta /users/cayke
         - transformar .c em .o com “$gcc -c arquivo.c”
-        - compilar tudo usando “swiftc arquivo1.swfit arquivo2.swift …. arquivoc.o”
+        - compilar tudo usando “swiftc arquivo1.swfit arquivo2.swift …. arquivoc.o -lcrypto”
     - JAVA: roda no java via terminal
         - gerar o .class usando o intellij - path no mac /OneDrive/unb/TCC/Dev/java_honest_writers/target/classes/com/caykeprudente
         - rodar usando $ java -cp meuprograma.jar:dependecia.jar “com.caykeprudente.Main”

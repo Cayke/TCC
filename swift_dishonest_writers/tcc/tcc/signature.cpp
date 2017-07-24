@@ -18,7 +18,7 @@
  param: message - Data that was signed.
  return: (Boolean) True if the signature is valid; False otherwise.
  */
-bool verifySignature(const char *server_id, const unsigned char * originalMessage, int messageSize, const char * signature) {
+int verifySignature(const char *server_id, const unsigned char * originalMessage, int messageSize, const char * signature) {
     int result;
     
     //    const unsigned char *originalMessage = (const unsigned char *)message.c_str();
@@ -32,7 +32,7 @@ bool verifySignature(const char *server_id, const unsigned char * originalMessag
     strcat(path, "_public.pem");
     FILE *file = fopen(path, "r");
     if (file == NULL)
-        return false;
+        return 0;
     
     RSA *rsa = PEM_read_RSA_PUBKEY(file, NULL, NULL, NULL);
     fclose(file);
@@ -42,22 +42,22 @@ bool verifySignature(const char *server_id, const unsigned char * originalMessag
     
     result = SHA256_Init(&sha_ctx);
     if (1 != result)
-        return false;
+        return 0;
     
     result = SHA256_Update(&sha_ctx, originalMessage, messageSize);
     if (1 != result)
-        return false;
+        return 0;
     
     result = SHA256_Final(digest, &sha_ctx);
     if (1 != result)
-        return false;
+        return 0;
     
     result = RSA_verify(NID_sha256, digest, sizeof(digest), sign, RSA_size(rsa), rsa);
     
     if (result == 1)
-        return true;
+        return 1;
     else
-        return false;
+        return 0;
 }
 
 
