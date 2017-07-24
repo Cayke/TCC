@@ -6,7 +6,7 @@
 //  Copyright © 2017 Cayke Prudente. All rights reserved.
 //
 
-import Cocoa
+import Foundation
 
 class signature: NSObject {
     /*
@@ -25,7 +25,7 @@ class signature: NSObject {
         }
         
         let location = NSString(string: "~/Desktop/certs/" + filePath).expandingTildeInPath
-        return try? NSString(contentsOfFile: location, encoding: String.Encoding.utf8.rawValue) as String
+        return try? String(contentsOfFile: location, encoding: .utf8)
     }
     
     
@@ -45,7 +45,7 @@ class signature: NSObject {
         }
         
         let location = NSString(string: "~/Desktop/certs/" + filePath).expandingTildeInPath
-        return try? NSString(contentsOfFile: location, encoding: String.Encoding.utf8.rawValue) as String
+        return try? String(contentsOfFile: location, encoding: .utf8)
     }
     
     
@@ -92,7 +92,7 @@ class signature: NSObject {
         
         let messageData = originalMessage.data(using: .utf8)!
         
-        guard let signatureData = NSData(base64Encoded: signature, options: NSData.Base64DecodingOptions.init(rawValue: 0)) else {
+        guard let signatureData = Data(base64Encoded: signature, options: .init(rawValue: 0)) else {
             return false
         }
         
@@ -104,7 +104,7 @@ class signature: NSObject {
     }
     
     static func base64Decode(string : String) -> String? {
-        guard let data = NSData(base64Encoded: string, options: NSData.Base64DecodingOptions.init(rawValue: 0)) else {
+        guard let data = Data(base64Encoded: string, options: .init(rawValue: 0)) else {
             return nil
         }
         
