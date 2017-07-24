@@ -145,10 +145,15 @@ class Server: NSObject {
                 self.VARIABLE = variable
                 self.TIMESTAMP = timestamp
                 let message = variable + String(timestamp)
-                guard let data_signature = signature.signData(server_id: self.ID, message: message) else {
-                    return
-                }
-                self.DATA_SIGNATURE = data_signature
+                
+                //                guard let data_signature = signature.signData(server_id: self.ID, message: message) else {
+                //                    return
+                //                }
+                //                self.DATA_SIGNATURE = data_signature
+                
+                let data_signature = signData(String(self.ID), message, Int32(message.characters.count))
+                self.DATA_SIGNATURE = String(describing: data_signature)
+                
                 self.LAST_ECHOED_VALUES = []
                 
                 pthread_mutex_unlock(&self.LOCK)
@@ -223,17 +228,29 @@ class Server: NSObject {
             pthread_mutex_unlock(&self.LOCK)
             
             let message = variable + String(timestamp)
-            let data_signature = signature.signData(server_id: self.ID, message: message)
-            
-            let dataDict : JSON = [Define.data_signature: JSON(data_signature ?? "")]
-            let response : JSON = [Define.server_id: JSON(self.ID),
-                                   "plataform": JSON(Define.plataform),
-                                   Define.request_code: JSON(request[Define.request_code] as! Int),
-                                   Define.status: JSON(Define.success),
-                                   Define.msg: JSON(Define.get_echoe),
-                                   Define.data: dataDict]
-            
-            sendResponse(response: response, clientSocket: clientSocket)
+            //            let data_signature = signature.signData(server_id: self.ID, message: message)
+            if let data_signature = signData(String(self.ID), message, Int32(message.characters.count)) {
+                let DATA_SIGNATURE = String(describing: data_signature)
+                
+                let dataDict : JSON = [Define.data_signature: JSON(DATA_SIGNATURE)]
+                let response : JSON = [Define.server_id: JSON(self.ID),
+                                       "plataform": JSON(Define.plataform),
+                                       Define.request_code: JSON(request[Define.request_code] as! Int),
+                                       Define.status: JSON(Define.success),
+                                       Define.msg: JSON(Define.get_echoe),
+                                       Define.data: dataDict]
+                
+                sendResponse(response: response, clientSocket: clientSocket)
+            }
+            else {
+                let response :JSON = [Define.server_id: JSON(self.ID),
+                                      "plataform": JSON(Define.plataform),
+                                      Define.request_code: JSON(request[Define.request_code] as! Int),
+                                      Define.status: JSON(Define.error),
+                                      Define.msg: JSON(Define.unknown_error)]
+                
+                sendResponse(response: response, clientSocket: clientSocket)
+            }
         }
     }
     
@@ -273,7 +290,8 @@ class Server: NSObject {
         var validEchoes = 0
         for (server_id, data_sign) in echoes {
             let data = value+String(timestamp)
-            if signature.verifySignature(server_id: server_id, originalMessage: data, signature: data_sign) {
+            //if signature.verifySignature(server_id: server_id, originalMessage: data, signature: data_sign) {
+            if verifySignature(String(server_id), data, Int32(data.characters.count), data_sign) {
                 validEchoes = validEchoes + 1
             }
         }
