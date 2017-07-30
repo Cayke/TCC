@@ -92,7 +92,7 @@
       </toolsSet>
       <compileType>
         <ccTool>
-          <commandLine>-std=c++11</commandLine>
+          <commandLine>-std=c++11 -pthread</commandLine>
         </ccTool>
         <linkerTool>
           <linkerLibItems>

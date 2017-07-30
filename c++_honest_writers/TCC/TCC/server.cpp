@@ -112,6 +112,8 @@ namespace server{
         getRequestStatus(&doc,socketTCPThread);
         
         close(socketTCPThread);
+        
+        std::cout << "matando thread\n";
     }
     
     

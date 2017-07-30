@@ -90,7 +90,7 @@
       </toolsSet>
       <compileType>
         <ccTool>
-          <commandLine>-std=c++11</commandLine>
+          <commandLine>-std=c++11 -pthread</commandLine>
         </ccTool>
       </compileType>
       <item path="Makefile" ex="false" tool="3" flavor2="0">
