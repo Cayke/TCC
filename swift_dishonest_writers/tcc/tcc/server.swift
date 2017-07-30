@@ -151,8 +151,9 @@ class Server: NSObject {
                 //                }
                 //                self.DATA_SIGNATURE = data_signature
                 
-                let data_signature = signData(String(self.ID), message, Int32(message.characters.count))
-                self.DATA_SIGNATURE = String(describing: data_signature)
+                if let data_signature = signData(String(self.ID), message, Int32(message.characters.count)) {
+                    self.DATA_SIGNATURE = String(cString: data_signature)
+                }
                 
                 self.LAST_ECHOED_VALUES = []
                 
@@ -230,7 +231,7 @@ class Server: NSObject {
             let message = variable + String(timestamp)
             //            let data_signature = signature.signData(server_id: self.ID, message: message)
             if let data_signature = signData(String(self.ID), message, Int32(message.characters.count)) {
-                let DATA_SIGNATURE = String(describing: data_signature)
+                let DATA_SIGNATURE = String(cString: data_signature)
                 
                 let dataDict : JSON = [Define.data_signature: JSON(DATA_SIGNATURE)]
                 let response : JSON = [Define.server_id: JSON(self.ID),
