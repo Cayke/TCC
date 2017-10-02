@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by cayke on 19/03/17.
  */
 public class Client {
-    List<Pair<String, Integer>> servers; // contains a tuple of (ip,port)
+    List<Pair<String, Double>> servers; // contains a tuple of (ip,port)
     int quorum = 2;
 
     Double id = -1d; // id do client. serve para identificar qual chave usar no RSA
@@ -23,7 +23,7 @@ public class Client {
     private Double request_code = 0d;
 
     List<ResponseData> responses;
-    List<Pair<String, Integer>> out_dated_servers;
+    List<Pair<String, Double>> out_dated_servers;
 
     Semaphore semaphore = new Semaphore(0);
     Lock lock_print = new ReentrantLock();
@@ -37,7 +37,7 @@ public class Client {
     param: id - Client id
     param: servers - Array with servers(ip+port)
     */
-    public Client(Double id, List<Pair<String, Integer>> servers) {
+    public Client(Double id, List<Pair<String, Double>> servers) {
         this.id = id;
         this.servers = servers;
 
@@ -106,7 +106,7 @@ public class Client {
 
         String dataSignature = MySignature.signData(MySignature.getPrivateKey(-1d, id), value+timestamp.intValue());
 
-        for (Pair<String, Integer> server : servers) {
+        for (Pair<String, Double> server : servers) {
             ResponseData data = new ResponseData(value, timestamp, dataSignature, id, request_code, server);
             ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write, data);
             Thread thread = new Thread(handler);
@@ -124,14 +124,14 @@ public class Client {
     private Double readTimestamp() {
         lock.lock();
         responses = new ArrayList<ResponseData>();
-        out_dated_servers = new ArrayList<Pair<String, Integer>>();
+        out_dated_servers = new ArrayList<Pair<String, Double>>();
         lock.unlock();
 
         lock_print.lock();
         System.out.println("Lendo timestamp dos servidores....");
         lock_print.unlock();
 
-        for (Pair<String, Integer> server : servers) {
+        for (Pair<String, Double> server : servers) {
             ResponseData data = new ResponseData(null, 0d, null, id, request_code, server);
             ClientHandler handler = new ClientHandler(this, ClientHandler.Function.readTimestamp, data);
             Thread thread = new Thread(handler);
@@ -181,14 +181,14 @@ public class Client {
     private void read() {
         lock.lock();
         responses = new ArrayList<ResponseData>();
-        out_dated_servers = new ArrayList<Pair<String, Integer>>();
+        out_dated_servers = new ArrayList<Pair<String, Double>>();
         lock.unlock();
 
         lock_print.lock();
         System.out.println("Lendo dados dos servidores....");
         lock_print.unlock();
 
-        for (Pair<String, Integer> server : servers) {
+        for (Pair<String, Double> server : servers) {
             ResponseData data = new ResponseData(null, 0d, null, id, request_code, server);
             ClientHandler handler = new ClientHandler(this, ClientHandler.Function.read, data);
             Thread thread = new Thread(handler);
@@ -239,7 +239,7 @@ public class Client {
     param: client_id - ID from client that written the value
     */
     private void writeBack(ResponseData data) {
-        for (Pair<String, Integer> server : out_dated_servers) {
+        for (Pair<String, Double> server : out_dated_servers) {
             if (data.timestamp != -1 && data.client_id != -1) {
                 data.server = server;
                 data.request_code = request_code;
