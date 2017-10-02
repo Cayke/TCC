@@ -25,10 +25,12 @@ Para executar os clientes deve-se passar como parametros os ip e portas dos serv
 
 - Modo verbose
 	- 0 para nao printar nada, 1 para printar so os dados principais, 2 para printar dados e todas as requests.
+- Path dos certificados 
+	- Caminho completo para pasta que contem os arquivos dos certificados publicos e privados.
 - IP e porta dos servidores
 
 Exemplo de execucao:
 
-		client.py 2 node0.caykequoruns.freestore.emulab.net 5000 node1.caykequoruns.freestore.emulab.net 5001 node2.caykequoruns.freestore.emulab.net 5002
+		client.py 2 /users/cayke node0.caykequoruns.freestore.emulab.net 5000 node1.caykequoruns.freestore.emulab.net 5001 node2.caykequoruns.freestore.emulab.net 5002
 		
 		
