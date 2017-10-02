@@ -276,6 +276,7 @@ public class ClientHandler implements Runnable {
 
         String status = (String) messageFromServer.get(Define.status);
         Double request_code = (Double) messageFromServer.get(Define.request_code);
+        String msg = (String) messageFromServer.get(Define.msg);
 
         if (status.equals(Define.success) && request_code.equals(data.request_code)) {
             ResponseData responseData = new ResponseData(messageFromServer, data.server);
@@ -286,6 +287,25 @@ public class ClientHandler implements Runnable {
             }
             else if (client.echoes.size() == client.quorum-1) {
                 client.echoes.add(new Pair<Integer, String>(responseData.server_id.intValue(), responseData.data_signature));
+                client.semaphore.release();
+            }
+            else {
+                client.lock_print.lock();
+                System.out.println("Quorum ja encheu. Jogando request fora...");
+                client.lock_print.unlock();
+            }
+            client.lock.unlock();
+        }
+        else if (status.equals(Define.error) && msg.equals(Define.timestamp_already_echoed)) {
+            client.lock.lock();
+            client.timestamp_already_echoed_by_any_server = true;
+
+            Double server_id = (Double) messageFromServer.get(Define.server_id);
+            if (client.echoes.size() < client.quorum - 1) {
+                client.echoes.add(new Pair<Integer, String>(server_id.intValue(), ""));
+            }
+            else if (client.echoes.size() == client.quorum - 1) {
+                client.echoes.add(new Pair<Integer, String>(server_id.intValue(), ""));
                 client.semaphore.release();
             }
             else {

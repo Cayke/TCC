@@ -30,6 +30,9 @@ public class Client {
 
     int increment_timestamp_by = 1;
 
+    boolean timestamp_already_echoed_by_any_server = false;
+    int timestamp_already_echoed_power = 0;
+
     Semaphore semaphore = new Semaphore(0);
     Lock lock_print = new ReentrantLock();
 
@@ -283,6 +286,7 @@ public class Client {
     private List<Pair<Integer, String>> getEchoes(String value, Double timestamp) {
         lock.lock();
         echoes = new ArrayList<Pair<Integer, String>>();
+        timestamp_already_echoed_by_any_server = false;
         lock.unlock();
 
         lock_print.lock();
@@ -304,7 +308,14 @@ public class Client {
                 request_code++;
                 lock.unlock();
 
-                if (echoes.size() >= quorum) {
+                if (timestamp_already_echoed_by_any_server) {
+                    double increment = Math.pow(2, timestamp_already_echoed_power);
+                    timestamp_already_echoed_power += 1;
+                    return getEchoes(value, timestamp + increment);
+                }
+                else if (echoes.size() >= quorum) {
+                    timestamp_already_echoed_power = 0;
+
                     List<Pair<Integer, String>> validEchoes = analyseEchoes(echoes, value, timestamp);
 
                     if (validEchoes.size() >= quorum) {
@@ -331,6 +342,8 @@ public class Client {
                 }
             }
             else {
+                timestamp_already_echoed_power = 0;
+
                 lock_print.lock();
                 System.out.println("Nao foi possivel ler nenhum dado. Timeout da conexao expirado");
                 lock_print.unlock();
