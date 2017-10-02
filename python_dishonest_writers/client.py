@@ -4,6 +4,7 @@ import threading
 import Define
 from representedData import RepresentedData
 from signature import Signature
+import math
 
 class Client ():
     SERVERS = [] # contains a tuple of (ip, port)
@@ -20,6 +21,10 @@ class Client ():
     OUT_DATED_SERVERS = []
 
     INCREMENT_TIMESTAMP_BY = 1
+
+    # tratamento de timestamp already echoed por algum server
+    TIMESTAMP_ALREADY_ECHOED_BY_ANY_SERVER = False
+    TIMESTAMP_ALREADY_ECHOED_POWER = 0
 
     SEMAPHORE = threading.Semaphore(0)
     LOCK_PRINT = threading.Lock()
@@ -153,6 +158,7 @@ class Client ():
     def getEchoes(self, value, timestamp):
         with self.LOCK:
             self.ECHOES = []
+            self.TIMESTAMP_ALREADY_ECHOED_BY_ANY_SERVER = False
 
         with self.LOCK_PRINT:
             print("Obtendo echos dos servidores....")
@@ -165,7 +171,14 @@ class Client ():
             with self.LOCK:
                 self.REQUEST_CODE = self.REQUEST_CODE + 1
 
-            if (len(self.ECHOES) >= self.QUORUM):
+            if self.TIMESTAMP_ALREADY_ECHOED_BY_ANY_SERVER:
+                increment = math.pow(2, self.TIMESTAMP_ALREADY_ECHOED_POWER)
+                self.TIMESTAMP_ALREADY_ECHOED_POWER = self.TIMESTAMP_ALREADY_ECHOED_POWER + 1
+                return self.getEchoes(value, timestamp + increment)
+
+
+            elif (len(self.ECHOES) >= self.QUORUM):
+                self.TIMESTAMP_ALREADY_ECHOED_POWER = 0
                 validEchoes = self.analyseEchoes(self.ECHOES, value, timestamp)
 
                 if len(validEchoes) >= self.QUORUM:
@@ -185,6 +198,8 @@ class Client ():
                 return None
 
         else:
+            self.TIMESTAMP_ALREADY_ECHOED_POWER = 0
+
             with self.LOCK_PRINT:
                 print("Nao foi possivel ler nenhum dado. Timeout da conexao expirado")
             return None
@@ -371,6 +386,24 @@ class Client ():
 
                 elif len(self.ECHOES) == self.QUORUM - 1:
                     self.ECHOES.append((server_id, data_signature))
+                    self.SEMAPHORE.release()
+
+                else:
+                    # do nothing
+                    with self.LOCK_PRINT:
+                        print("Quorum ja encheu. Jogando request fora...")
+
+        elif messageFromServer[Define.status] == Define.error and messageFromServer[Define.msg] == Define.timestamp_already_echoed:
+            with self.LOCK:
+                self.TIMESTAMP_ALREADY_ECHOED_BY_ANY_SERVER = True
+
+                server_id = messageFromServer[Define.server_id]
+
+                if len(self.ECHOES) < self.QUORUM - 1:
+                    self.ECHOES.append((server_id, ""))
+
+                elif len(self.ECHOES) == self.QUORUM - 1:
+                    self.ECHOES.append((server_id, ""))
                     self.SEMAPHORE.release()
 
                 else:
