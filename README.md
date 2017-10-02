@@ -23,8 +23,12 @@ Exemplo de execucao:
 
 Para executar os clientes deve-se passar como parametros os ip e portas dos servidores. 
 
+- Modo verbose
+	- 0 para nao printar nada, 1 para printar so os dados principais, 2 para printar dados e todas as requests.
+- IP e porta dos servidores
+
 Exemplo de execucao:
 
-		client.py node0.caykequoruns.freestore.emulab.net 5000 node1.caykequoruns.freestore.emulab.net 5001 node2.caykequoruns.freestore.emulab.net 5002
+		client.py 2 node0.caykequoruns.freestore.emulab.net 5000 node1.caykequoruns.freestore.emulab.net 5001 node2.caykequoruns.freestore.emulab.net 5002
 		
 		
