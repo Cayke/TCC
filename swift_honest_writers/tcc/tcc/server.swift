@@ -20,19 +20,26 @@ class Server: NSObject {
     
     var LOCK = pthread_mutex_t();
     
+    var VERBOSE = 0;
+    var CERT_PATH = "";
+    
     
     /*
      Server constructor.
      param: id - Server id
      param: ip - Server ip
      param: port - Server port
+     param: verbose - Verbose level: 0 - no print, 1 - print important, 2 - print all
+     param: cert_path - Path to certificates
      */
-    init(id: Int, ip: String, port: Int) {
+    init(id: Int, ip: String, port: Int, verbose: Int, cert_path: String) {
         print ("Servidor \(Define.plataform) \(id) rodando...")
         
         self.ID = id;
         self.HOST = ip;
         self.PORT = port;
+        self.VERBOSE = verbose;
+        self.CERT_PATH = cert_path;
         
         pthread_mutex_init(&self.LOCK, nil)
     }
