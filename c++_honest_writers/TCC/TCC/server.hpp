@@ -13,7 +13,7 @@
 #include "jsonHelper.hpp"
 
 namespace server{
-    void init (int id, std::string ip, int port);
+    void init (int id, std::string ip, int port, int verbose, std::string cert_path);
     void waitForConnection();
     void error(std::string msg);
     void clientConnected(int socketTCPThread);
