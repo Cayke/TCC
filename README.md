@@ -33,7 +33,7 @@ Para executar os servidores deve-se iniciar o programa passando os parametros na
 	
 Exemplo de execucao:
 		
-		server.py 192.168.0.199 0 2 /users/cayke
+		server.py 192.168.0.199 0 2 /users/cayke/
 		
 		
 ## Execucao clientes ##
@@ -52,6 +52,6 @@ Para executar os clientes deve-se passar como parametros os ip e portas dos serv
 
 Exemplo de execucao:
 
-		client.py 0 2 /users/cayke node0.caykequoruns.freestore.emulab.net 5000 node1.caykequoruns.freestore.emulab.net 5001 node2.caykequoruns.freestore.emulab.net 5002
+		client.py 0 2 /users/cayke/ node0.caykequoruns.freestore.emulab.net 5000 node1.caykequoruns.freestore.emulab.net 5001 node2.caykequoruns.freestore.emulab.net 5002
 		
 		
