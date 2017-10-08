@@ -28,6 +28,9 @@ public class Client {
     Semaphore semaphore = new Semaphore(0);
     Lock lock_print = new ReentrantLock();
 
+    public int verbose = 0;
+    public String cert_path = "";
+
     boolean exit = false;
 
 
@@ -36,10 +39,14 @@ public class Client {
     Client constructor.
     param: id - Client id
     param: servers - Array with servers(ip+port)
+    param: verbose - Verbose level: 0 - no print, 1 - print important, 2 - print all
+    param: cert_path - Path to certificates
     */
-    public Client(Double id, List<Pair<String, Double>> servers) {
+    public Client(Double id, List<Pair<String, Double>> servers, int verbose, String cert_path) {
         this.id = id;
         this.servers = servers;
+        this.verbose = verbose;
+        this.cert_path = cert_path;
 
         System.out.println("Client " + Define.plataform + " " + id + "running....");
 
@@ -104,7 +111,7 @@ public class Client {
         Double timestamp = readTimestamp();
         timestamp = incrementTimestamp(timestamp);
 
-        String dataSignature = MySignature.signData(MySignature.getPrivateKey(-1d, id), value+timestamp.intValue());
+        String dataSignature = MySignature.signData(MySignature.getPrivateKey(-1d, id, this.cert_path), value+timestamp.intValue());
 
         for (Pair<String, Double> server : servers) {
             ResponseData data = new ResponseData(value, timestamp, dataSignature, id, request_code, server);
@@ -290,7 +297,7 @@ public class Client {
                 out_dated_servers.add(response.server);
             }
             else {
-                if (MySignature.verifySign(MySignature.getPublicKey(-1d, response.client_id), response.data_signature, response.value+response.timestamp.intValue())) {
+                if (MySignature.verifySign(MySignature.getPublicKey(-1d, response.client_id, this.cert_path), response.data_signature, response.value+response.timestamp.intValue())) {
                     if (response.timestamp.equals(timestamp)) {
                         repeatTimes = repeatTimes + 1;
                         auxServers.add(response.server);

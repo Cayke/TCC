@@ -159,7 +159,7 @@ class Server: NSObject {
                 //                }
                 //                self.DATA_SIGNATURE = data_signature
                 
-                if let data_signature = signData(String(self.ID), message, Int32(message.characters.count)) {
+                if let data_signature = signData(String(self.ID), message, Int32(message.characters.count), self.CERT_PATH) {
                     self.DATA_SIGNATURE = String(cString: data_signature)
                 }
                 
@@ -238,7 +238,7 @@ class Server: NSObject {
             
             let message = variable + String(timestamp)
             //            let data_signature = signature.signData(server_id: self.ID, message: message)
-            if let data_signature = signData(String(self.ID), message, Int32(message.characters.count)) {
+            if let data_signature = signData(String(self.ID), message, Int32(message.characters.count), self.CERT_PATH) {
                 let DATA_SIGNATURE = String(cString: data_signature)
                 
                 let dataDict : JSON = [Define.data_signature: JSON(DATA_SIGNATURE)]
@@ -300,7 +300,7 @@ class Server: NSObject {
         for (server_id, data_sign) in echoes {
             let data = value+String(timestamp)
             //if signature.verifySignature(server_id: server_id, originalMessage: data, signature: data_sign) {
-            if verifySignature(NSString(string: String(server_id)).utf8String, data, Int32(data.characters.count), data_sign) == 1 {
+            if verifySignature(NSString(string: String(server_id)).utf8String, data, Int32(data.characters.count), data_sign, self.CERT_PATH) == 1 {
                 validEchoes = validEchoes + 1
             }
         }

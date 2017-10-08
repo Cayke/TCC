@@ -12,14 +12,15 @@ class Signature():
     Returns a private Key. Attribute must be the ID number of the host, and the other must be -1
     param: server - ID from the server (if not server, pass -1)
     param: client - ID from the client (if not client, pass -1)
+    param: filePath - Path for certs folder
     return: (String) The private certificate.
     '''
     @staticmethod
-    def getPrivateKey(server, client):
+    def getPrivateKey(server, client, filePath):
         if server != -1:
-            filePath = "server" + str(server) + "_private.pem"
+            filePath = filePath + "server" + str(server) + "_private.pem"
         else:
-            filePath = "client" + str(client) + "_private.pem"
+            filePath = filePath + "client" + str(client) + "_private.pem"
 
         return open(filePath, "r").read()
 
@@ -27,14 +28,15 @@ class Signature():
     Returns a public Key. Attribute must be the ID number of the host, and the other must be -1
     param: server - ID from the server (if not server, pass -1)
     param: client - ID from the client (if not client, pass -1)
+    param: filePath - Path for certs folder
     return: (String) The public certificate.
     '''
     @staticmethod
-    def getPublicKey(server, client):
+    def getPublicKey(server, client, filePath):
         if server != -1:
-            filePath = "server" + str(server) + "_public.pem"
+            filePath = filePath + "server" + str(server) + "_public.pem"
         else:
-            filePath = "client" + str(client) + "_public.pem"
+            filePath = filePath + "client" + str(client) + "_public.pem"
 
         return open(filePath, "r").read()
 

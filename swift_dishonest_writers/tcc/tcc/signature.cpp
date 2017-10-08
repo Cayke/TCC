@@ -10,15 +10,17 @@
 #include <openssl/rsa.h>
 #include "string.h"
 #include "signature.hpp"
+#include <string>
 
 /*
  Verifies with a public key from whom the data came that it was indeed signed by their private key
  param: server_id - Server's id that signed message
  param: signature - Signature to be verified (in base64 format)
  param: message - Data that was signed.
+ param: cert_path - Path to certificates
  return: (Boolean) True if the signature is valid; False otherwise.
  */
-int verifySignature(const char *server_id, const unsigned char * originalMessage, int messageSize, const char * signature) {
+int verifySignature(const char *server_id, const unsigned char * originalMessage, int messageSize, const char * signature, const char * cert_path) {
     int result;
     
     //    const unsigned char *originalMessage = (const unsigned char *)message.c_str();
@@ -26,11 +28,13 @@ int verifySignature(const char *server_id, const unsigned char * originalMessage
     
     const unsigned char *sign = (const unsigned char *)base64decode(signature, (int)strlen(signature));
     
-    char path[20];
-    strcpy(path, "server");
-    strcat(path, server_id);
-    strcat(path, "_public.pem");
-    FILE *file = fopen(path, "r");
+    std::string path = "";
+    path += cert_path;
+    path += "server";
+    path += server_id;
+    path += "_public.pem";
+    path += server_id;
+    FILE *file = fopen(path.c_str(), "r");
     if (file == NULL)
         return 0;
     
@@ -65,19 +69,22 @@ int verifySignature(const char *server_id, const unsigned char * originalMessage
  Signs data with a private Certificate.
  param: server_id - Signer's id
  param: message - Data to be signed
+ param: cert_path - Path to certificates
  return: (String) base64 encoded signature
  */
-const char * signData(const char * server_id, const char * message, int messageSize) {
+const char * signData(const char * server_id, const char * message, int messageSize, const char * cert_path) {
     int result;
     
     //    const unsigned char *originalMessage = (const unsigned char *)message.c_str();
     //    int messageSize = (int) strlen(message.c_str());
     
-    char path[20];
-    strcpy(path, "server");
-    strcat(path, server_id);
-    strcat(path, "_private.pem");
-    FILE *file = fopen(path, "r");
+    std::string path = "";
+    path += cert_path;
+    path += "server";
+    path += server_id;
+    path += "_private.pem";
+    path += server_id;
+    FILE *file = fopen(path.c_str(), "r");
     if (file == NULL)
         return NULL;
     

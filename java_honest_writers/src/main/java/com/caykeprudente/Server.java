@@ -23,7 +23,6 @@ public class Server
     Lock lock = new ReentrantLock();
 
     public int verbose = 0;
-    public String cert_path = "";
 
     /*
     Server constructor.
@@ -31,15 +30,13 @@ public class Server
     param: ip - Server ip
     param: port - Server port
     param: verbose - Verbose level: 0 - no print, 1 - print important, 2 - print all
-    param: cert_path - Path to certificates
     */
-    public Server (Double id, String ip, int port, int verbose, String cert_path)
+    public Server (Double id, String ip, int port, int verbose)
     {
         this.host = ip;
         this.id = id;
         this.port = port;
         this.verbose = verbose;
-        this.cert_path = cert_path;
     }
 
 

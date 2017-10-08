@@ -27,7 +27,6 @@ namespace server{
     int PORT = -1;
     int ID = -1;
     int VERBOSE = 0;
-    std::string CERT_PATH = "";
     
     std::string VARIABLE = "";
     int TIMESTAMP = -1;
@@ -42,15 +41,15 @@ namespace server{
      param: id - Server id
      param: ip - Server ip
      param: port - Server port
+     param: verbose - Verbose level: 0 - no print, 1 - print important, 2 - print all
      */
-    void init (int id, std::string ip, int port, int verbose, std::string cert_path)
+    void init (int id, std::string ip, int port, int verbose)
     {
         std::cout << "Servidor " + Define::plataform + " " + std::to_string(id) + "rodando...\n";
         ID = id;
         HOST = ip;
         PORT = port;
         VERBOSE = verbose;
-        CERT_PATH = cert_path;
         waitForConnection();
     }
     

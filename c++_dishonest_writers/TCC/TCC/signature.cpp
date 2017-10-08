@@ -19,9 +19,10 @@ Verifies with a public key from whom the data came that it was indeed signed by 
 param: server_id - Server's id that signed message
 param: signature - Signature to be verified (in base64 format)
 param: message - Data that was signed.
+param: cert_path - Path to certificates
 return: (Boolean) True if the signature is valid; False otherwise.
 */
-bool verify(int server_id, std::string message, std::string signature) {
+bool verify(int server_id, std::string message, std::string signature, std::string cert_path) {
     int result;
     
     const unsigned char *originalMessage = (const unsigned char *)message.c_str();
@@ -29,7 +30,7 @@ bool verify(int server_id, std::string message, std::string signature) {
     
     const unsigned char *sign = (const unsigned char *)base64decode(signature.c_str(), (int)strlen(signature.c_str()));
     
-    std::string path = "server" + std::to_string(server_id) + "_public.pem";
+    std::string path = cert_path + "server" + std::to_string(server_id) + "_public.pem";
     FILE *file = fopen(path.c_str(), "r");
     if (file == NULL)
         return false;
@@ -65,15 +66,16 @@ bool verify(int server_id, std::string message, std::string signature) {
 Signs data with a private Certificate.
 param: server_id - Signer's id
 param: message - Data to be signed
+param: cert_path - Path to certificates
 return: (String) base64 encoded signature
 */
-std::string signData(int server_id, std::string message) {
+std::string signData(int server_id, std::string message, std::string cert_path) {
     int result;
     
     const unsigned char *originalMessage = (const unsigned char *)message.c_str();
     int messageSize = (int) strlen(message.c_str());
     
-    std::string path = "server" + std::to_string(server_id) + "_private.pem";
+    std::string path = cert_path + "server" + std::to_string(server_id) + "_private.pem";
     FILE *file = fopen(path.c_str(), "r");
     if (file == NULL)
         return NULL;

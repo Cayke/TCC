@@ -29,6 +29,9 @@ class Client ():
     SEMAPHORE = threading.Semaphore(0)
     LOCK_PRINT = threading.Lock()
 
+    VERBOSE = 0
+    CERT_PATH = ''
+
     exit = False
 
 
@@ -36,10 +39,14 @@ class Client ():
     Client constructor.
     param: id - Client id
     param: servers - Array with servers(ip+port)
+    param: verbose - Verbose level: 0 - no print, 1 - print important, 2 - print all  
+    param: cert_path - Path to certificates
     '''
-    def __init__(self, id, servers):
+    def __init__(self, id, servers, verbose, cert_path):
         self.ID = id
         self.SERVERS = servers
+        self.VERBOSE = verbose
+        self.CERT_PATH = cert_path
 
         print('Client ' + Define.plataform + " " + str(self.ID) + 'running...')
         self.initUserInterface()
@@ -502,7 +509,7 @@ class Client ():
                 #nao ha dado escrito no servidor
                 self.OUT_DATED_SERVERS.append(server)
             else:
-                if Signature.verifySign(Signature.getPublicKey(server_id, -1), data_sign, rValue + str(rTimestamp)):
+                if Signature.verifySign(Signature.getPublicKey(server_id, -1, self.CERT_PATH), data_sign, rValue + str(rTimestamp)):
                     self.addResponseToArrayWithRepeatTimes(array, rValue, rTimestamp, data_sign, server_id, server)
                 else:
                     # assinatura invalida
@@ -563,7 +570,7 @@ class Client ():
     def analyseEchoes(self, echoes, value, timestamp):
         validEchoes = []
         for (server_id, data_signature) in echoes:
-            if Signature.verifySign(Signature.getPublicKey(server_id, -1), data_signature, value + str(timestamp)):
+            if Signature.verifySign(Signature.getPublicKey(server_id, -1, self.CERT_PATH), data_signature, value + str(timestamp)):
                 validEchoes.append((server_id, data_signature))
 
         return validEchoes

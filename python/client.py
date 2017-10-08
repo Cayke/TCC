@@ -21,6 +21,9 @@ class Client ():
     SEMAPHORE = threading.Semaphore(0)
     LOCK_PRINT = threading.Lock()
 
+    VERBOSE = 0
+    CERT_PATH = ''
+
     exit = False
 
 
@@ -28,10 +31,14 @@ class Client ():
     Client constructor.
     param: id - Client id
     param: servers - Array with servers(ip+port)
+    param: verbose - Verbose level: 0 - no print, 1 - print important, 2 - print all  
+    param: cert_path - Path to certificates
     '''
-    def __init__(self, id, servers):
+    def __init__(self, id, servers, verbose, cert_path):
         self.ID = id
         self.SERVERS = servers
+        self.VERBOSE = verbose
+        self.CERT_PATH = cert_path
 
         print('Client ' + Define.plataform + " " + str(self.ID) + 'running...')
         self.initUserInterface()
@@ -87,7 +94,7 @@ class Client ():
         timestamp = self.readTimestamp()
         timestamp = self.incrementTimestamp(timestamp)
 
-        data_signature = Signature.signData(Signature.getPrivateKey(-1,self.ID), value+str(timestamp))
+        data_signature = Signature.signData(Signature.getPrivateKey(-1,self.ID, self.CERT_PATH), value+str(timestamp))
 
         for server in self.SERVERS:
             threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, data_signature, self.ID, self.REQUEST_CODE)).start()
@@ -356,7 +363,7 @@ class Client ():
                 self.OUT_DATED_SERVERS.append(server)
 
             else:
-                if Signature.verifySign(Signature.getPublicKey(-1, r_client_id), data_sign, rValue + str(rTimestamp)):
+                if Signature.verifySign(Signature.getPublicKey(-1, r_client_id, self.CERT_PATH), data_sign, rValue + str(rTimestamp)):
                     if (rTimestamp == timestamp):
                         repeatTimes = repeatTimes + 1
                         auxServers.append(server)

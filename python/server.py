@@ -17,7 +17,6 @@ class Server(object):
     LOCK = threading.Lock();
 
     VERBOSE = 0
-    CERT_PATH = ''
 
     '''
     Server constructor.
@@ -25,15 +24,13 @@ class Server(object):
     param: ip - Server ip
     param: port - Server port
     param: verbose - Verbose level: 0 - no print, 1 - print important, 2 - print all  
-    param: cert_path - Path to certificates
     '''
-    def __init__(self, id, ip, port, verbose, cert_path):
+    def __init__(self, id, ip, port, verbose):
         print("servidor " + Define.plataform + " " + str(id) + "rodando...")
         self.ID = id
         self.HOST = ip
         self.PORT = port
         self.VERBOSE = verbose
-        self.CERT_PATH = cert_path
         self.waitForConnection()
 
     '''

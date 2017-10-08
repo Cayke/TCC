@@ -15,16 +15,15 @@ if debug {
 }
 else {
     let arguments = CommandLine.arguments
-    if arguments.count < 5 {
+    if arguments.count < 4 {
         print ("Numero de argumentos inválidos")
     }
     else {
         let ip = arguments[1]
         let id = Int(arguments[2])
         let verbose = Int(arguments[3])
-        let cert_path = arguments[4]
         
-        Server(id: id!, ip: ip, port: 5000+id!, verbose: verbose!, cert_path: cert_path).waitForConnection();
+        Server(id: id!, ip: ip, port: 5000+id!, verbose: verbose!).waitForConnection();
     }
 }
 

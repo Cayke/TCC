@@ -215,7 +215,7 @@ public class ServerHandler implements Runnable {
             if (isEchoValid(echoes, variable, timestamp, type)) {
                 server.variable = variable;
                 server.timestamp = timestamp;
-                server.data_signature = MySignature.signData(MySignature.getPrivateKey(server.id, -1d), variable+timestamp);
+                server.data_signature = MySignature.signData(MySignature.getPrivateKey(server.id, -1d, this.server.cert_path), variable+timestamp);
                 server.last_echoed_values = new ArrayList<Pair<Integer, String>>();
 
                 server.lock.unlock();
@@ -299,7 +299,7 @@ public class ServerHandler implements Runnable {
             response.put(Define.msg, Define.timestamp_already_echoed);
         }
         else {
-            String data_signature = MySignature.signData(MySignature.getPrivateKey(server.id, -1d), variable+timestamp);
+            String data_signature = MySignature.signData(MySignature.getPrivateKey(server.id, -1d, this.server.cert_path), variable+timestamp);
 
             server.lock.lock();
             server.last_echoed_values.add(new Pair<Integer, String>(timestamp, variable));
@@ -359,7 +359,7 @@ public class ServerHandler implements Runnable {
     public boolean isEchoValid(List<Pair<Double, String>> echoes, String value, int timestamp, String type) {
         int validEchoes = 0;
         for (Pair<Double, String> echo: echoes) {
-            if (MySignature.verifySign(MySignature.getPublicKey(echo.fst, -1d), echo.snd, value+timestamp))
+            if (MySignature.verifySign(MySignature.getPublicKey(echo.fst, -1d, this.server.cert_path), echo.snd, value+timestamp))
                 validEchoes++;
         }
 

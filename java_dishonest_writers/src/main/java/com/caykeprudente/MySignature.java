@@ -20,21 +20,20 @@ public class MySignature {
     Returns a private Key. Attribute must be the ID number of the host, and the other must be -1
     param: server - ID from the server (if not server, pass -1)
     param: client - ID from the client (if not client, pass -1)
+    param: filePath - Path for certs folder
     return: (String) The private certificate.
     */
-    public static String getPrivateKey(Double server, Double client) {
+    public static String getPrivateKey(Double server, Double client, String filePath) {
         //no java o certificado privado tem que estar no formato pcks8, e o gerado no site e pcks1, executar o comando abaixo para poder usar o cert aqui
         //openssl pkcs8 -topk8 -inform PEM -outform PEM -in client0_private.pem -out client0_private_pcks8.pem -nocrypt
 
-        String filePath = "";
         if (server != -1)
-            filePath = "server" + server.intValue() + "_private_pcks8.pem";
+            filePath = filePath + "server" + server.intValue() + "_private_pcks8.pem";
         else
-            filePath = "client" + client.intValue() + "_private_pcks8.pem";
+            filePath = filePath + "client" + client.intValue() + "_private_pcks8.pem";
 
         try {
-            String path = "src/main/java/com/caykeprudente/" + filePath;
-            FileInputStream inputStream = new FileInputStream(path);
+            FileInputStream inputStream = new FileInputStream(filePath);
             String everything = IOUtils.toString(inputStream);
             inputStream.close();
             return  everything;
@@ -49,18 +48,17 @@ public class MySignature {
     Returns a public Key. Attribute must be the ID number of the host, and the other must be -1
     param: server - ID from the server (if not server, pass -1)
     param: client - ID from the client (if not client, pass -1)
+    param: filePath - Path for certs folder
     return: (String) The public certificate.
     */
-    public static String getPublicKey(Double server, Double client) {
-        String filePath = "";
+    public static String getPublicKey(Double server, Double client, String filePath) {
         if (server != -1)
-            filePath = "server" + server.intValue() + "_public.pem";
+            filePath = filePath + "server" + server.intValue() + "_public.pem";
         else
-            filePath = "client" + client.intValue() + "_public.pem";
+            filePath = filePath +"client" + client.intValue() + "_public.pem";
 
         try {
-            String path = "src/main/java/com/caykeprudente/" + filePath;
-            FileInputStream inputStream = new FileInputStream(path);
+            FileInputStream inputStream = new FileInputStream(filePath);
             String everything = IOUtils.toString(inputStream);
             inputStream.close();
             return  everything;

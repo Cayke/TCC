@@ -48,6 +48,8 @@ namespace server{
      param: id - Server id
      param: ip - Server ip
      param: port - Server port
+     param: verbose - Verbose level: 0 - no print, 1 - print important, 2 - print all
+     param: cert_path - Path to certificates
      */
     void init (int id, std::string ip, int port, int verbose, std::string cert_path)
     {
@@ -189,7 +191,7 @@ namespace server{
             if (isEchoValid(echoes, variable, timestamp, type)) {
                 VARIABLE = variable;
                 TIMESTAMP = timestamp;
-                DATA_SIGNATURE = signData(ID, variable + std::to_string(timestamp));
+                DATA_SIGNATURE = signData(ID, variable + std::to_string(timestamp), CERT_PATH);
                 LAST_ECHOED_VALUES.clear();
                 LOCK.unlock();
                 
@@ -343,7 +345,7 @@ namespace server{
             LAST_ECHOED_VALUES.push_back(std::make_pair(timestamp, variable));
             LOCK.unlock();
             
-            std::string data_signature = signData(ID, variable + std::to_string(timestamp));
+            std::string data_signature = signData(ID, variable + std::to_string(timestamp), CERT_PATH);
             
             rapidjson::Document response;
             response.SetObject();
@@ -402,7 +404,7 @@ namespace server{
         
         for(std::vector<std::pair<int, std::string>>::const_iterator iterator = echoes.begin() ; iterator < echoes.end(); iterator ++) {
             std::pair<int, std::string> echoe = *iterator;
-            if (verify(echoe.first, value + std::to_string(timestamp), echoe.second))
+            if (verify(echoe.first, value + std::to_string(timestamp), echoe.second, CERT_PATH))
                 validEchoes++;
         }
         

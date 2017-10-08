@@ -19,6 +19,7 @@ public class Client {
     int faults = 1; //number of faults system can handle
     int quorum = 2*faults + 1;
 
+    Double id = -1d;
 
     Lock lock = new ReentrantLock();
 
@@ -36,6 +37,9 @@ public class Client {
     Semaphore semaphore = new Semaphore(0);
     Lock lock_print = new ReentrantLock();
 
+    public int verbose = 0;
+    public String cert_path = "";
+
     boolean exit = false;
 
 
@@ -44,11 +48,16 @@ public class Client {
     Client constructor.
     param: id - Client id
     param: servers - Array with servers(ip+port)
+    param: verbose - Verbose level: 0 - no print, 1 - print important, 2 - print all
+    param: cert_path - Path to certificates
     */
-    public Client(List<Pair<String, Integer>> servers) {
+    public Client(Double id, List<Pair<String, Integer>> servers, int verbose, String cert_path) {
+        this.id = id;
         this.servers = servers;
+        this.verbose = verbose;
+        this.cert_path = cert_path;
 
-        System.out.println("Client " + Define.plataform + " running....");
+        System.out.println("Client " + Define.plataform + " " + id + "running....");
 
         initUserInterface();
     }
@@ -388,7 +397,7 @@ public class Client {
             if (response.timestamp == -1)
                 out_dated_servers.add(response.server);
             else {
-                if (MySignature.verifySign(MySignature.getPublicKey(response.server_id,-1d), response.data_signature, response.value+response.timestamp.intValue()))
+                if (MySignature.verifySign(MySignature.getPublicKey(response.server_id,-1d, this.cert_path), response.data_signature, response.value+response.timestamp.intValue()))
                     addResponseToArrayWithRepeatTimes(array, response);
                 else
                     out_dated_servers.add(response.server);
@@ -459,7 +468,7 @@ public class Client {
     private List analyseEchoes(List<Pair<Integer, String>> echoes, String value, Double timestamp) {
         List<Pair<Integer, String>> validEchoes = new ArrayList<Pair<Integer, String>>();
         for (Pair<Integer, String> echo : echoes) {
-            if (MySignature.verifySign(MySignature.getPublicKey(echo.fst.doubleValue(), -1d), echo.snd, value+timestamp.intValue()))
+            if (MySignature.verifySign(MySignature.getPublicKey(echo.fst.doubleValue(), -1d, this.cert_path), echo.snd, value+timestamp.intValue()))
                 validEchoes.add(echo);
         }
 

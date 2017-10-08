@@ -123,7 +123,7 @@ class Server(object):
             if self.isEchoValid(echoes, variable, timestamp, type):
                 self.VARIABLE = variable
                 self.TIMESTAMP = timestamp
-                self.DATA_SIGNATURE = Signature.signData(Signature.getPrivateKey(self.ID, -1), variable + str(timestamp))
+                self.DATA_SIGNATURE = Signature.signData(Signature.getPrivateKey(self.ID, -1, self.CERT_PATH), variable + str(timestamp))
                 self.LAST_ECHOED_VALUES = []
 
                 self.LOCK.release()
@@ -198,7 +198,7 @@ class Server(object):
             responseJSON = json.dumps(response)
 
         else:
-            data_signature = Signature.signData(Signature.getPrivateKey(self.ID, -1), variable + str(timestamp))
+            data_signature = Signature.signData(Signature.getPrivateKey(self.ID, -1, self.CERT_PATH), variable + str(timestamp))
 
             with self.LOCK:
                 self.LAST_ECHOED_VALUES.append((timestamp, variable))
@@ -238,7 +238,7 @@ class Server(object):
         validEchoes = 0
         for (server_id, data_signature) in echoes:
             try:
-                if Signature.verifySign(Signature.getPublicKey(server_id, -1), data_signature, value + str(timestamp)):
+                if Signature.verifySign(Signature.getPublicKey(server_id, -1, self.CERT_PATH), data_signature, value + str(timestamp)):
                     validEchoes = validEchoes + 1
 
             except Exception as msg:
