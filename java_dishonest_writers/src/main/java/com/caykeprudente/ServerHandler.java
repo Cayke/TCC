@@ -43,7 +43,8 @@ public class ServerHandler implements Runnable {
     */
     @Override
     public void run() {
-        System.out.println("Novo cliente conectado, nova thread criada");
+        if (this.server.verbose > 0)
+            System.out.println("Novo cliente conectado, nova thread criada");
 
         Boolean success = false;
 
@@ -61,9 +62,11 @@ public class ServerHandler implements Runnable {
         }
 
         if (success)
-            System.out.println("matando thread, operacao feita com sucesso");
+            if (this.server.verbose > 0)
+                System.out.println("matando thread, operacao feita com sucesso");
         else
-            System.out.println("matando thread, operacao nao obteve sucesso");
+            if (this.server.verbose > 0)
+                System.out.println("matando thread, operacao nao obteve sucesso");
     }
 
 
@@ -220,7 +223,8 @@ public class ServerHandler implements Runnable {
 
                 server.lock.unlock();
 
-                System.out.println("Recebido variable = " + variable + " e timestamp " + timestamp);
+                if (this.server.verbose > 0)
+                    System.out.println("Recebido variable = " + variable + " e timestamp " + timestamp);
 
                 HashMap<String, Object> response = new HashMap<String, Object>();
                 response.put(Define.server_id, server.id.intValue());

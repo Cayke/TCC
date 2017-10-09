@@ -60,7 +60,7 @@ public class Server
     public void waitForConnection() throws IOException
     {
         ServerSocket serverSocket = new ServerSocket(port);
-        System.out.println("Porta " + String.valueOf(port) +  " aberta!");
+        System.out.println("Servidor " + Define.plataform + " " + String.valueOf(id) + " rodando!");
 
         while (true)
         {

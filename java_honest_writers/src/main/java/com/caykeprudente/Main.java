@@ -8,6 +8,7 @@ import java.util.List;
 
 public class Main {
     private static boolean DEBUG = true;
+    public static int VERBOSE;
 
     public static void main(String[] args) {
         // write your code here
@@ -18,6 +19,7 @@ public class Main {
     private static void runServer(String[] args) {
         if (DEBUG) {
             Server server = new Server(0d, "localhost", 5000, 2);
+            VERBOSE = 2;
             try {
                 server.waitForConnection();
             } catch (Exception e) {
@@ -33,6 +35,7 @@ public class Main {
             String ip = args[0];
             Double id = Double.valueOf(args[1]);
             int verbose = Integer.parseInt(args[2]);
+            VERBOSE = verbose;
             int port = 5000 + id.intValue();
 
             Server server = new Server(id, ip, port, verbose);
@@ -46,12 +49,13 @@ public class Main {
 
     private static void runClient(String[] args) {
         if (DEBUG) {
-            List<Pair<String, Double>> servers = new ArrayList<Pair<String, Double>>();
-            servers.add(new Pair<String, Double>("node0.caykequoruns.freestore.emulab.net", 5000d));
-            servers.add(new Pair<String, Double>("node1.caykequoruns.freestore.emulab.net", 5000d));
-            servers.add(new Pair<String, Double>("node2.caykequoruns.freestore.emulab.net", 5000d));
+            List<Pair<String, Integer>> servers = new ArrayList<Pair<String, Integer>>();
+            servers.add(new Pair<String, Integer>("node0.caykequoruns.freestore.emulab.net", 5000));
+            servers.add(new Pair<String, Integer>("node1.caykequoruns.freestore.emulab.net", 5000));
+            servers.add(new Pair<String, Integer>("node2.caykequoruns.freestore.emulab.net", 5000));
             try {
                 new Client(0d, servers, 2, "/OneDrive/unb/TCC/DEV/certs/");
+                VERBOSE = 2;
             } catch (Exception e) {
                 System.out.println("Deu ruim no client: " + e.toString());
             }
@@ -64,12 +68,13 @@ public class Main {
 
             Double id = Double.valueOf(args[0]);
             int verbose = Integer.parseInt(args[1]);
+            VERBOSE = verbose;
             String cert_path = args[2];
 
-            List<Pair<String, Double>> servers = new ArrayList<Pair<String, Double>>();
+            List<Pair<String, Integer>> servers = new ArrayList<Pair<String, Integer>>();
             int i = 4;
             while (i <= args.length) {
-                servers.add(new Pair<String, Double>(args[i], Double.valueOf(args[i+1])));
+                servers.add(new Pair<String, Integer>(args[i], Integer.parseInt(args[i+1])));
                 i = i+2;
             }
 

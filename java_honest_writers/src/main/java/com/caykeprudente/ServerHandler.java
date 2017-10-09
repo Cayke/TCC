@@ -38,7 +38,8 @@ public class ServerHandler implements Runnable {
     */
     @Override
     public void run() {
-        System.out.println("Novo cliente conectado, nova thread criada");
+        if (this.server.verbose > 0)
+            System.out.println("Novo cliente conectado, nova thread criada");
 
         boolean shouldContinue = true;
         while (shouldContinue) {
@@ -58,7 +59,8 @@ public class ServerHandler implements Runnable {
             e.printStackTrace();
         }
 
-        System.out.println("matando thread");
+        if (this.server.verbose > 0)
+            System.out.println("matando thread");
     }
 
 
@@ -215,7 +217,8 @@ public class ServerHandler implements Runnable {
         server.lock.lock();
         if (timestamp > server.timestamp)
         {
-            System.out.println("Recebido variable = " + variable + " e timestamp " + timestamp);
+            if (this.server.verbose > 0)
+                System.out.println("Recebido variable = " + variable + " e timestamp " + timestamp);
 
             server.variable = variable;
             server.timestamp = timestamp;

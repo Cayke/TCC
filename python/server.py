@@ -54,19 +54,24 @@ class Server(object):
     param: socketTCPThread - Socket that has been created for the pair (Server, Client)
     '''
     def clientConnected(self, socketTCPThread):
-        print("Novo cliente conectado, nova thread criada")
+        if self.VERBOSE > 0:
+            print("Novo cliente conectado, nova thread criada")
         while True:
             try:
                 data = socketTCPThread.recv(2048)
                 request = json.loads(data.decode('utf-8'))
+                if self.VERBOSE == 2:
+                    print('-----REQUEST CHEGOU:-----' + request)
                 self.getRequestStatus(request,socketTCPThread)
             except socket.error as msg:
-                print('Error code: ' + str(msg[0]) + ', Error message: ' + str(msg[1]))
-                print('matando thread')
+                if self.VERBOSE > 0:
+                    print('Error code: ' + str(msg[0]) + ', Error message: ' + str(msg[1]))
+                    print('matando thread')
                 socketTCPThread.close()
                 return False
             except:
-                print('matando thread')
+                if self.VERBOSE > 0:
+                    print('matando thread')
                 socketTCPThread.close()
                 return False
 
@@ -90,17 +95,22 @@ class Server(object):
 
             elif type == Define.bye:
                 socketTCP.close()
-                print('cliente desconectou propositalmente')
+                if self.VERBOSE > 0:
+                    print('cliente desconectou propositalmente')
                 return
 
             else:
                 response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.error, msg = Define.undefined_type)
                 responseJSON = json.dumps(response)
+                if self.VERBOSE == 2:
+                    print('-----REQUEST SAINDO:-----' + responseJSON)
                 socketTCP.send(responseJSON.encode('utf-8'))
 
         except:
             response = dict(server_id = self.ID, plataform = Define.plataform, status = Define.error, msg = Define.unknown_error)
             responseJSON = json.dumps(response)
+            if self.VERBOSE == 2:
+                print('-----REQUEST SAINDO:-----' + responseJSON)
             socketTCP.send(responseJSON.encode('utf-8'))
 
     '''
@@ -116,8 +126,8 @@ class Server(object):
 
         self.LOCK.acquire()
         if timestamp > self.TIMESTAMP:
-
-            print("Recebido variable = " + variable + " e timestamp " + str(timestamp))
+            if self.VERBOSE > 0:
+                print("Recebido variable = " + variable + " e timestamp " + str(timestamp))
 
             self.VARIABLE = variable
             self.TIMESTAMP = timestamp
@@ -128,6 +138,8 @@ class Server(object):
             responseJSON = json.dumps(response)
             self.LOCK.release()
 
+            if self.VERBOSE == 2:
+                print('-----REQUEST SAINDO:-----' + responseJSON)
             socketTCP.send(responseJSON.encode('utf-8'))
 
         else:
@@ -135,6 +147,8 @@ class Server(object):
 
             response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.error, msg = Define.outdated_timestamp)
             responseJSON = json.dumps(response)
+            if self.VERBOSE == 2:
+                print('-----REQUEST SAINDO:-----' + responseJSON)
             socketTCP.send(responseJSON.encode('utf-8'))
 
     '''
@@ -148,6 +162,8 @@ class Server(object):
             response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.success, msg = Define.read, data = dataDict)
             responseJSON = json.dumps(response)
 
+        if self.VERBOSE == 2:
+            print('-----REQUEST SAINDO:-----' + responseJSON)
         socketTCP.send(responseJSON.encode('utf-8'))
 
     '''
@@ -161,4 +177,6 @@ class Server(object):
             response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.success, msg = Define.read_timestamp, data = dataDict)
             responseJSON = json.dumps(response)
 
+        if self.VERBOSE == 2:
+            print('-----REQUEST SAINDO:-----' + responseJSON)
         socketTCP.send(responseJSON.encode('utf-8'))

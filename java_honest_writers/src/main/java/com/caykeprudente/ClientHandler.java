@@ -74,9 +74,8 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
 
-            client.lock_print.lock();
-            System.out.println("Error updating");
-            client.lock_print.unlock();
+            if (this.client.verbose > 0)
+                System.out.println("Error updating");
         }
 
         LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
@@ -88,13 +87,11 @@ public class ClientHandler implements Runnable {
 
         String status = (String) messageFromServer.get(Define.status);
         if (status.equals(Define.success)) {
-            client.lock_print.lock();
-            System.out.println("Variable updated");
-            client.lock_print.unlock();
+            if (this.client.verbose > 0)
+                System.out.println("Variable updated");
         } else {
-            client.lock_print.lock();
-            System.out.println("Error updating");
-            client.lock_print.unlock();
+            if (this.client.verbose > 0)
+                System.out.println("Error updating");
         }
     }
 
@@ -116,9 +113,8 @@ public class ClientHandler implements Runnable {
         } catch (Exception e) {
             e.printStackTrace();
 
-            client.lock_print.lock();
-            System.out.println("Error reading value from server");
-            client.lock_print.unlock();
+            if (this.client.verbose > 0)
+                System.out.println("Error reading value from server");
         }
 
         LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
@@ -144,21 +140,18 @@ public class ClientHandler implements Runnable {
                 client.semaphore.release();
             }
             else {
-                client.lock_print.lock();
-                System.out.println("Quorum ja encheu. Jogando request fora...");
-                client.lock_print.unlock();
+                if (this.client.verbose > 0)
+                    System.out.println("Quorum ja encheu. Jogando request fora...");
             }
             client.lock.unlock();
         }
         else if (status.equals(Define.error)) {
-            client.lock_print.lock();
-            System.out.println("Ocorreu algum erro na request");
-            client.lock_print.unlock();
+            if (this.client.verbose > 0)
+                System.out.println("Ocorreu algum erro na request");
         }
         else if (!request_code.equals(data.request_code)) {
-            client.lock_print.lock();
-            System.out.println("Response atrasada");
-            client.lock_print.unlock();
+            if (this.client.verbose > 0)
+                System.out.println("Response atrasada");
         }
     }
 
@@ -180,9 +173,8 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
 
-            client.lock_print.lock();
-            System.out.println("Error reading value from server");
-            client.lock_print.unlock();
+            if (this.client.verbose > 0)
+                System.out.println("Error reading value from server");
         }
 
         LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
@@ -208,21 +200,18 @@ public class ClientHandler implements Runnable {
                 client.semaphore.release();
             }
             else {
-                client.lock_print.lock();
-                System.out.println("Quorum ja encheu. Jogando request fora...");
-                client.lock_print.unlock();
+                if (this.client.verbose > 0)
+                    System.out.println("Quorum ja encheu. Jogando request fora...");
             }
             client.lock.unlock();
         }
         else if (status.equals(Define.error)) {
-            client.lock_print.lock();
-            System.out.println("Ocorreu algum erro na request");
-            client.lock_print.unlock();
+            if (this.client.verbose > 0)
+                System.out.println("Ocorreu algum erro na request");
         }
         else if (!request_code.equals(data.request_code)) {
-            client.lock_print.lock();
-            System.out.println("Response atrasada");
-            client.lock_print.unlock();
+            if (this.client.verbose > 0)
+                System.out.println("Response atrasada");
         }
     }
 }

@@ -60,17 +60,22 @@ class Server(object):
     param: socketTCPThread - Socket that has been created for the pair (Server, Client)
     '''
     def clientConnected(self, socketTCPThread):
-        print("Novo cliente conectado, nova thread criada")
+        if self.VERBOSE > 0:
+            print("Novo cliente conectado, nova thread criada")
 
         try:
             data = socketTCPThread.recv(2048)
+            if self.VERBOSE == 2:
+                print('-----REQUEST CHEGANDO:-----' + data)
             request = json.loads(data.decode('utf-8'))
             self.getRequestStatus(request,socketTCPThread)
         except Exception as msg:
-            print('Error on clientConnected, ' + 'Error code: ' + str(msg[0]) + ', Error message: ' + str(msg[1]))
+            if self.VERBOSE > 0:
+                print('Error on clientConnected, ' + 'Error code: ' + str(msg[0]) + ', Error message: ' + str(msg[1]))
 
         socketTCPThread.close()
-        print('matando thread')
+        if self.VERBOSE > 0:
+            print('matando thread')
 
 
     '''
@@ -98,11 +103,15 @@ class Server(object):
                 response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.error, msg = Define.undefined_type)
                 responseJSON = json.dumps(response)
                 socketTCP.send(responseJSON.encode('utf-8'))
+                if self.VERBOSE == 2:
+                    print('-----REQUEST SAINDO:-----' + responseJSON)
 
         except:
             response = dict(server_id = self.ID, plataform = Define.plataform, status = Define.error, msg = Define.unknown_error)
             responseJSON = json.dumps(response)
             socketTCP.send(responseJSON.encode('utf-8'))
+            if self.VERBOSE == 2:
+                print('-----REQUEST SAINDO:-----' + responseJSON)
 
     '''
     Write data in register if the requirements are followed.
@@ -128,12 +137,15 @@ class Server(object):
 
                 self.LOCK.release()
 
-                print("Recebido variable = " + variable + " e timestamp " + str(timestamp))
+                if self.VERBOSE > 0:
+                    print("Recebido variable = " + variable + " e timestamp " + str(timestamp))
 
                 response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.success, msg = Define.variable_updated)
                 responseJSON = json.dumps(response)
 
                 socketTCP.send(responseJSON.encode('utf-8'))
+                if self.VERBOSE == 2:
+                    print('-----REQUEST SAINDO:-----' + responseJSON)
 
             else:
                 self.LOCK.release()
@@ -142,6 +154,8 @@ class Server(object):
                 responseJSON = json.dumps(response)
 
                 socketTCP.send(responseJSON.encode('utf-8'))
+                if self.VERBOSE == 2:
+                    print('-----REQUEST SAINDO:-----' + responseJSON)
 
         else:
             self.LOCK.release()
@@ -150,6 +164,8 @@ class Server(object):
             responseJSON = json.dumps(response)
 
             socketTCP.send(responseJSON.encode('utf-8'))
+            if self.VERBOSE == 2:
+                print('-----REQUEST SAINDO:-----' + responseJSON)
 
     '''
     Sends data in register for client.
@@ -164,6 +180,8 @@ class Server(object):
         responseJSON = json.dumps(response)
 
         socketTCP.send(responseJSON.encode('utf-8'))
+        if self.VERBOSE == 2:
+            print('-----REQUEST SAINDO:-----' + responseJSON)
 
     '''
     Sends timestamp in register for client.
@@ -178,6 +196,8 @@ class Server(object):
         responseJSON = json.dumps(response)
 
         socketTCP.send(responseJSON.encode('utf-8'))
+        if self.VERBOSE == 2:
+            print('-----REQUEST SAINDO:-----' + responseJSON)
 
 
     '''
@@ -208,6 +228,8 @@ class Server(object):
             responseJSON = json.dumps(response)
 
         socketTCP.send(responseJSON.encode('utf-8'))
+        if self.VERBOSE == 2:
+            print('-----REQUEST SAINDO:-----' + responseJSON)
 
 
     '''
@@ -242,7 +264,8 @@ class Server(object):
                     validEchoes = validEchoes + 1
 
             except Exception as msg:
-                print('Error on isEchoValid, ' + 'Error code: ' + str(msg[0]) + ', Error message: ' + str(msg[1]))
+                if self.VERBOSE > 0:
+                    print('Error on isEchoValid, ' + 'Error code: ' + str(msg[0]) + ', Error message: ' + str(msg[1]))
 
         if type == Define.write :
             return validEchoes >= self.QUORUM

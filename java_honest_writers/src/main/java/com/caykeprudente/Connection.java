@@ -24,6 +24,10 @@ public class Connection {
         dOut.write(requestJSON.getBytes());
         dOut.flush(); // Send the data
         //dOut.close();
+        if (Main.VERBOSE == 2) {
+            System.out.println("-----REQUEST SAINDO:-----" + requestJSON);
+        }
+
     }
 
     /*
@@ -36,6 +40,9 @@ public class Connection {
         while (shouldContinue) {
             String jsonMessage = readInputStream(socket);
             if (jsonMessage != null) {
+                if (Main.VERBOSE == 2) {
+                    System.out.println("-----REQUEST CHEGANDO:-----" + jsonMessage);
+                }
                 return new GsonBuilder().create().fromJson(jsonMessage, Map.class);
             }
         }

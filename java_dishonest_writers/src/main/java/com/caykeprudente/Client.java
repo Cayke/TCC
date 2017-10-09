@@ -35,7 +35,6 @@ public class Client {
     int timestamp_already_echoed_power = 0;
 
     Semaphore semaphore = new Semaphore(0);
-    Lock lock_print = new ReentrantLock();
 
     public int verbose = 0;
     public String cert_path = "";
@@ -72,14 +71,12 @@ public class Client {
             while (choice != '1' && choice != '2' && choice != '3') {
                 cleanScreen();
 
-                lock_print.lock();
                 System.out.println ("*********************************");
                 System.out.println ("O que deseja fazer?");
                 System.out.println ("1 - Escrever valor na variavel");
                 System.out.println ("2 - Ler valor da variavel");
                 System.out.println ("3 - Sair");
                 System.out.println ("*********************************");
-                lock_print.unlock();
 
                 Scanner scanner = new Scanner(System.in);
                 choice = scanner.next().charAt(0);
@@ -136,9 +133,8 @@ public class Client {
             increment_timestamp_by++;
             lock.unlock();
 
-            lock_print.lock();
-            System.out.println("Nao foi possivel fazer a escrita");
-            lock_print.unlock();
+            if (this.verbose > 0)
+                System.out.println("Nao foi possivel fazer a escrita");
         }
     }
 
@@ -153,9 +149,8 @@ public class Client {
         out_dated_servers = new ArrayList<Pair<String, Integer>>();
         lock.unlock();
 
-        lock_print.lock();
-        System.out.println("Lendo timestamp dos servidores....");
-        lock_print.unlock();
+        if (this.verbose > 0)
+            System.out.println("Lendo timestamp dos servidores....");
 
         for (Pair<String, Integer> server : servers) {
             ResponseData data = new ResponseData(null, 0d, null, 0d, request_code, server, null);
@@ -175,23 +170,22 @@ public class Client {
                 if (responses.size() >= quorum) {
                     Double timestamp = analyseTimestampResponse(responses);
 
-                    lock_print.lock();
-                    System.out.println("Li o timestamp do server: " + timestamp);
-                    lock_print.unlock();
+                    if (this.verbose > 0)
+                        System.out.println("Li o timestamp do server: " + timestamp);
 
                     return timestamp;
                 }
                 else {
-                    lock_print.lock();
-                    System.out.println("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.");
-                    lock_print.unlock();
+                    if (this.verbose > 0)
+                        System.out.println("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.");
+
                     return -1d;
                 }
             }
             else {
-                lock_print.lock();
+                if (this.verbose > 0)
                 System.out.println("Nao foi possivel ler nenhum dado. Timeout da conexao expirado");
-                lock_print.unlock();
+
                 return -1d;
             }
         } catch (InterruptedException e) {
@@ -210,9 +204,9 @@ public class Client {
         out_dated_servers = new ArrayList<Pair<String, Integer>>();
         lock.unlock();
 
-        lock_print.lock();
-        System.out.println("Lendo dados dos servidores....");
-        lock_print.unlock();
+        if (this.verbose > 0)
+            System.out.println("Lendo dados dos servidores....");
+
 
         for (Pair<String, Integer> server : servers) {
             ResponseData data = new ResponseData(null, 0d, null, 0d, request_code, server, null);
@@ -236,29 +230,26 @@ public class Client {
                         writeBack(mostRecentData);
 
                         RepresentedData visibleData = new RepresentedData(mostRecentData.value);
-                        lock_print.lock();
-                        System.out.println("Li o dado do server no timestamp " + mostRecentData.timestamp + ": ");
-                        visibleData.showInfo();
-                        lock_print.unlock();
+                        if (this.verbose > 0) {
+                            System.out.println("Li o dado do server no timestamp " + mostRecentData.timestamp + ": ");
+                            visibleData.showInfo();
+                        }
                     }
                     else {
-                        lock_print.lock();
-                        System.out.println("Nao foi possivel ler nenhum dado. Chegou o quorum de mensagens mas nao havia b+1 iguais.");
-                        lock_print.unlock();
+                        if (this.verbose > 0)
+                            System.out.println("Nao foi possivel ler nenhum dado. Chegou o quorum de mensagens mas nao havia b+1 iguais.");
                     }
 
 
                 }
                 else {
-                    lock_print.lock();
-                    System.out.println("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.");
-                    lock_print.unlock();
+                    if (this.verbose > 0)
+                        System.out.println("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.");
                 }
             }
             else {
-                lock_print.lock();
-                System.out.println("Nao foi possivel ler nenhum dado. Timeout da conexao expirado");
-                lock_print.unlock();
+                if (this.verbose > 0)
+                    System.out.println("Nao foi possivel ler nenhum dado. Timeout da conexao expirado");
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -298,9 +289,8 @@ public class Client {
         timestamp_already_echoed_by_any_server = false;
         lock.unlock();
 
-        lock_print.lock();
-        System.out.println("Obtendo echos dos servidores....");
-        lock_print.unlock();
+        if (this.verbose > 0)
+            System.out.println("Obtendo echos dos servidores....");
 
         for (Pair<String, Integer> server : servers) {
             ResponseData data = new ResponseData(value, timestamp, null, null, request_code, server, null);
@@ -328,24 +318,21 @@ public class Client {
                     List<Pair<Integer, String>> validEchoes = analyseEchoes(echoes, value, timestamp);
 
                     if (validEchoes.size() >= quorum) {
-                        lock_print.lock();
-                        System.out.println("Li os echos com sucesso");
-                        lock_print.unlock();
+                        if (this.verbose > 0)
+                            System.out.println("Li os echos com sucesso");
 
                         return validEchoes;
                     }
                     else {
-                        lock_print.lock();
-                        System.out.println("Li os echos, mas nao deu quorum. Algum echo veio errado.");
-                        lock_print.unlock();
+                        if (this.verbose > 0)
+                            System.out.println("Li os echos, mas nao deu quorum. Algum echo veio errado.");
 
                         return null;
                     }
                 }
                 else {
-                    lock_print.lock();
-                    System.out.println("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.");
-                    lock_print.unlock();
+                    if (this.verbose > 0)
+                        System.out.println("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.");
 
                     return null;
                 }
@@ -353,9 +340,8 @@ public class Client {
             else {
                 timestamp_already_echoed_power = 0;
 
-                lock_print.lock();
-                System.out.println("Nao foi possivel ler nenhum dado. Timeout da conexao expirado");
-                lock_print.unlock();
+                if (this.verbose > 0)
+                    System.out.println("Nao foi possivel ler nenhum dado. Timeout da conexao expirado");
 
                 return null;
             }

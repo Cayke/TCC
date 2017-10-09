@@ -26,7 +26,7 @@ class Server: NSObject {
     
     var VERBOSE = 0;
     var CERT_PATH = "";
-
+    
     
     
     /*
@@ -65,11 +65,15 @@ class Server: NSObject {
                     })
                     thread.start()
                 } else {
-                    print("accept error")
+                    if self.VERBOSE > 0 {
+                        print("accept error")
+                    }
                 }
             }
         case .failure(let error):
-            print(error)
+            if self.VERBOSE > 0 {
+                print(error)
+            }
         }
         serverSocket.close();
     }
@@ -80,17 +84,24 @@ class Server: NSObject {
      param: socketTCPThread - Socket that has been created for the pair (Server, Client)
      */
     func clientConnected(clientSocket: TCPClient) {
-        print("Novo cliente conectado, nova thread criada");
-        
+        if self.VERBOSE > 0 {
+            print("Novo cliente conectado, nova thread criada");
+        }
         guard let data = clientSocket.read(2048) else {return}
         
         let requestJSON = String(bytes: data, encoding: .utf8)
+        if (self.VERBOSE == 2) {
+            print ("-----REQUEST CHEGANDO:----- " + requestJSON!)
+        }
         let request = try? JSONSerialization.jsonObject(with: (requestJSON?.data(using: .utf8))!) as! [String:Any]
         
         getRequestStatus(request: request!, clientSocket: clientSocket)
         
         clientSocket.close()
-        print("matando thread")
+        
+        if self.VERBOSE > 0 {
+            print("matando thread")
+        }
     }
     
     
@@ -116,7 +127,9 @@ class Server: NSObject {
         }
         else if type == Define.bye {
             clientSocket.close()
-            print("cliente desconectou propositalmente")
+            if self.VERBOSE > 0 {
+                print("cliente desconectou propositalmente")
+            }
             return
         }
         else {
@@ -368,5 +381,9 @@ class Server: NSObject {
         let responseJSONString = response.dump()
         
         _ = clientSocket.send(string: responseJSONString)
+        
+        if (self.VERBOSE == 2) {
+            print ("-----REQUEST SAINDO:----- " + responseJSONString)
+        }
     }
 }

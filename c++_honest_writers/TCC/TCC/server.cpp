@@ -99,7 +99,8 @@ namespace server{
      */
     void clientConnected(int socketTCPThread)
     {
-        std::cout << "Novo cliente conectado, nova thread criada\n";
+        if (VERBOSE > 0)
+            std::cout << "Novo cliente conectado, nova thread criada\n";
         
         char data[2048];
         int n;
@@ -109,14 +110,16 @@ namespace server{
         if (n < 0)
             error("ERROR reading from socket");
         
-        printf("Here is the message: %s\n",data);
+        if (VERBOSE == 2)
+            printf("-----REQUEST CHEGANDO:----- %s\n",data);
         
         rapidjson::Document doc = parseJsonStringToDocument(data);
         getRequestStatus(&doc,socketTCPThread);
         
         close(socketTCPThread);
         
-        std::cout << "matando thread\n";
+        if (VERBOSE > 0)
+            std::cout << "matando thread\n";
     }
     
     
@@ -137,7 +140,8 @@ namespace server{
         else if (type == Define::bye)
         {
             close(socketTCP);
-            std::cout << "Cliente desconectou propositalmente";
+            if (VERBOSE > 0)
+                std::cout << "Cliente desconectou propositalmente";
         }
         else
         {
@@ -166,6 +170,8 @@ namespace server{
         int n = send(socketTCP, responseJSON.c_str(), responseJSON.length(), 0);
         if (n < 0)
             error("ERROR writing to socket");
+        if (VERBOSE == 2)
+            std::cout << "-----REQUEST SAINDO:----- " + responseJSON;
     }
     
     
@@ -181,7 +187,8 @@ namespace server{
         std::string data_signature = getStringWithKeyFromDocument(request, Define::data_signature);
         int client_id = getIntWithKeyFromDocument(request, Define::client_id);
         
-        std::cout << "Recebido variable = " + variable + " e timestamp " + std::to_string(timestamp) + "\n";
+        if (VERBOSE > 0)
+            std::cout << "Recebido variable = " + variable + " e timestamp " + std::to_string(timestamp) + "\n";
         
         LOCK.lock();
         if (timestamp > TIMESTAMP)

@@ -19,7 +19,6 @@ class Client ():
 
 
     SEMAPHORE = threading.Semaphore(0)
-    LOCK_PRINT = threading.Lock()
 
     VERBOSE = 0
     CERT_PATH = ''
@@ -52,13 +51,12 @@ class Client ():
             choice = 0
             while choice != '1' and choice != '2' and choice != '3':
                 self.cleanScreen()
-                with self.LOCK_PRINT:
-                    print ('*********************************\n')
-                    print ('O que deseja fazer?\n')
-                    print ('1 - Escrever valor na variavel\n')
-                    print ('2 - Ler valor da variavel\n')
-                    print ('3 - Sair\n')
-                    print ('*********************************\n')
+                print ('*********************************\n')
+                print ('O que deseja fazer?\n')
+                print ('1 - Escrever valor na variavel\n')
+                print ('2 - Ler valor da variavel\n')
+                print ('3 - Sair\n')
+                print ('*********************************\n')
                 choice = input()
 
             if choice == '1':
@@ -111,7 +109,7 @@ class Client ():
             self.RESPONSES = []
             self.OUT_DATED_SERVERS = []
 
-        with self.LOCK_PRINT:
+        if self.VERBOSE > 0:
             print("Lendo timestamp dos servidores....")
         for server in self.SERVERS:
             threading.Thread(target=self.readTimestampFromServer, args=(server, self.REQUEST_CODE)).start()
@@ -125,19 +123,19 @@ class Client ():
             if (len(self.RESPONSES) >= self.QUORUM):
                 timestamp = self.analyseTimestampResponse(self.RESPONSES)
 
-                with self.LOCK_PRINT:
+                if self.VERBOSE > 0:
                     print('Li o dado do server:')
                     print("Timestamp: " + str(timestamp))
 
                     return timestamp
 
             else:
-                with self.LOCK_PRINT:
+                if self.VERBOSE > 0:
                     print("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.")
                 return -1
 
         else:
-            with self.LOCK_PRINT:
+            if self.VERBOSE > 0:
                 print("Nao foi possivel ler nenhum dado. Timeout da conexao expirado")
             return -1
 
@@ -150,8 +148,8 @@ class Client ():
             self.RESPONSES = []
             self.OUT_DATED_SERVERS = []
 
-        with self.LOCK_PRINT:
-            print("Lendo dados dos servidores....")
+            if self.VERBOSE > 0:
+                print("Lendo dados dos servidores....")
         for server in self.SERVERS:
             threading.Thread(target=self.readFromServer, args=(server, self.REQUEST_CODE)).start()
 
@@ -167,17 +165,17 @@ class Client ():
                 self.writeBack(value, timestamp, data_signature, client_id)
 
                 data = RepresentedData(value)
-                with self.LOCK_PRINT:
+                if self.VERBOSE > 0:
                     print('Li o dado do server:')
                     data.showInfo()
                     print ("Timestamp: " + str(timestamp))
 
             else:
-                with self.LOCK_PRINT:
+                if self.VERBOSE > 0:
                     print ("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.")
 
         else:
-            with self.LOCK_PRINT:
+            if self.VERBOSE > 0:
                 print ("Nao foi possivel ler nenhum dado. Timeout da conexao expirado")
 
 
@@ -211,15 +209,19 @@ class Client ():
 
             TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             TCPSocket.connect(server)
+            if self.VERBOSE == 2:
+                print('-----REQUEST SAINDO:-----' + requestJSON)
             TCPSocket.send(requestJSON.encode('utf-8'))
 
             messageFromServerJSON, server = TCPSocket.recvfrom(2048)
+            if self.VERBOSE == 2:
+                print('-----REQUEST CHEGANDO:-----' + messageFromServerJSON)
             messageFromServer = json.loads(messageFromServerJSON.decode('utf-8'))
             if messageFromServer[Define.status] == Define.success:
-                with self.LOCK_PRINT:
+                if self.VERBOSE > 0:
                     print('Variable updated')
             else:
-                with self.LOCK_PRINT:
+                if self.VERBOSE > 0:
                     print('Error updating')
 
 
@@ -248,15 +250,15 @@ class Client ():
 
                 else:
                     #do nothing
-                    with self.LOCK_PRINT:
+                    if self.VERBOSE > 0:
                         print("Quorum ja encheu. Jogando request fora...")
 
         elif messageFromServer[Define.status] == Define.error:
-            with self.LOCK_PRINT:
+            if self.VERBOSE > 0:
                 print("Ocorreu algum erro na request")
 
         elif messageFromServer[Define.request_code] != self.REQUEST_CODE:
-            with self.LOCK_PRINT:
+            if self.VERBOSE > 0:
                 print("Response atrasada.")
 
 
@@ -282,15 +284,15 @@ class Client ():
 
                 else:
                     #do nothing
-                    with self.LOCK_PRINT:
+                    if self.VERBOSE > 0:
                         print("Quorum ja encheu. Jogando request fora...")
 
         elif messageFromServer[Define.status] == Define.error:
-            with self.LOCK_PRINT:
+            if self.VERBOSE > 0:
                 print("Ocorreu algum erro na request")
 
         elif messageFromServer[Define.request_code] != self.REQUEST_CODE:
-            with self.LOCK_PRINT:
+            if self.VERBOSE > 0:
                 print("Response atrasada.")
 
 
@@ -304,9 +306,13 @@ class Client ():
         requestJSON = json.dumps(request)
         TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TCPSocket.connect(server)
+        if self.VERBOSE == 2:
+            print('-----REQUEST SAINDO:-----' + requestJSON)
         TCPSocket.send(requestJSON.encode('utf-8'))
 
         messageFromServerJSON, server = TCPSocket.recvfrom(2048)
+        if self.VERBOSE == 2:
+            print('-----REQUEST CHEGANDO:-----' + messageFromServerJSON)
 
         return json.loads(messageFromServerJSON.decode('utf-8'))
 
@@ -321,9 +327,13 @@ class Client ():
         requestJSON = json.dumps(request)
         TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TCPSocket.connect(server)
+        if self.VERBOSE == 2:
+            print('-----REQUEST SAINDO:-----' + requestJSON)
         TCPSocket.send(requestJSON.encode('utf-8'))
 
         messageFromServerJSON, server = TCPSocket.recvfrom(2048)
+        if self.VERBOSE == 2:
+            print('-----REQUEST CHEGANDO:-----' + messageFromServerJSON)
 
         return json.loads(messageFromServerJSON.decode('utf-8'))
 

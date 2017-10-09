@@ -56,11 +56,15 @@ class Server: NSObject {
                     })
                     thread.start()
                 } else {
-                    print("accept error")
+                    if self.VERBOSE > 0 {
+                        print("accept error")
+                    }
                 }
             }
         case .failure(let error):
-            print(error)
+            if self.VERBOSE > 0 {
+                print(error)
+            }
         }
         serverSocket.close();
     }
@@ -71,17 +75,25 @@ class Server: NSObject {
      param: socketTCPThread - Socket that has been created for the pair (Server, Client)
      */
     func clientConnected(clientSocket: TCPClient) {
-        print("Novo cliente conectado, nova thread criada");
+        if self.VERBOSE > 0 {
+            print("Novo cliente conectado, nova thread criada");
+        }
         
         guard let data = clientSocket.read(2048) else {return}
         
         let requestJSON = String(bytes: data, encoding: .utf8)
+        if (self.VERBOSE == 2) {
+            print ("-----REQUEST CHEGANDO:----- " + requestJSON!)
+        }
         let request = try? JSONSerialization.jsonObject(with: (requestJSON?.data(using: .utf8))!) as! [String:Any]
         
         getRequestStatus(request: request!, clientSocket: clientSocket)
         
         clientSocket.close()
-        print("matando thread")
+        
+        if self.VERBOSE > 0 {
+            print("matando thread")
+        }
     }
     
     
@@ -104,15 +116,18 @@ class Server: NSObject {
         }
         else if type == Define.bye {
             clientSocket.close()
-            print("cliente desconectou propositalmente")
+            
+            if self.VERBOSE > 0 {
+                print("cliente desconectou propositalmente")
+            }
             return
         }
         else {
             let response : JSON = [Define.server_id: JSON(self.ID),
-                            "plataform": JSON(Define.plataform),
-                            Define.request_code: JSON(request[Define.request_code] as! Int),
-                            Define.status: JSON(Define.error),
-                            Define.msg: JSON(Define.undefined_type)]
+                                   "plataform": JSON(Define.plataform),
+                                   Define.request_code: JSON(request[Define.request_code] as! Int),
+                                   Define.status: JSON(Define.error),
+                                   Define.msg: JSON(Define.undefined_type)]
             
             sendResponse(response: response, clientSocket: clientSocket)
         }
@@ -132,7 +147,9 @@ class Server: NSObject {
         
         pthread_mutex_lock(&self.LOCK)
         if timestamp > self.TIMESTAMP {
-            print ("Recebido variable = \(variable) e timestamp = \(timestamp)")
+            if self.VERBOSE > 0 {
+                print ("Recebido variable = \(variable) e timestamp = \(timestamp)")
+            }
             
             self.VARIABLE = variable
             self.TIMESTAMP = timestamp
@@ -140,10 +157,10 @@ class Server: NSObject {
             self.CLIENT_ID = client_id
             
             let response :JSON = [Define.server_id: JSON(self.ID),
-                            "plataform": JSON(Define.plataform),
-                            Define.request_code: JSON(request[Define.request_code] as! Int),
-                            Define.status: JSON(Define.success),
-                            Define.msg: JSON(Define.variable_updated)]
+                                  "plataform": JSON(Define.plataform),
+                                  Define.request_code: JSON(request[Define.request_code] as! Int),
+                                  Define.status: JSON(Define.success),
+                                  Define.msg: JSON(Define.variable_updated)]
             pthread_mutex_unlock(&self.LOCK)
             
             sendResponse(response: response, clientSocket: clientSocket)
@@ -152,10 +169,10 @@ class Server: NSObject {
             pthread_mutex_unlock(&self.LOCK)
             
             let response :JSON = [Define.server_id: JSON(self.ID),
-                            "plataform": JSON(Define.plataform),
-                            Define.request_code: JSON(request[Define.request_code] as! Int),
-                            Define.status: JSON(Define.error),
-                            Define.msg: JSON(Define.outdated_timestamp)]
+                                  "plataform": JSON(Define.plataform),
+                                  Define.request_code: JSON(request[Define.request_code] as! Int),
+                                  Define.status: JSON(Define.error),
+                                  Define.msg: JSON(Define.outdated_timestamp)]
             
             sendResponse(response: response, clientSocket: clientSocket)
         }
@@ -170,15 +187,15 @@ class Server: NSObject {
     func read (request: Dictionary<String, Any>, clientSocket: TCPClient) {
         pthread_mutex_lock(&self.LOCK)
         let dataDict : JSON = [Define.variable: JSON(self.VARIABLE),
-                        Define.timestamp: JSON(self.TIMESTAMP),
-                        Define.data_signature: JSON(self.DATA_SIGNATURE),
-                        Define.client_id: JSON(self.CLIENT_ID)]
+                               Define.timestamp: JSON(self.TIMESTAMP),
+                               Define.data_signature: JSON(self.DATA_SIGNATURE),
+                               Define.client_id: JSON(self.CLIENT_ID)]
         let response : JSON = [Define.server_id: JSON(self.ID),
-                        "plataform": JSON(Define.plataform),
-                        Define.request_code: JSON(request[Define.request_code] as! Int),
-                        Define.status: JSON(Define.success),
-                        Define.msg: JSON(Define.read),
-                        Define.data: dataDict]
+                               "plataform": JSON(Define.plataform),
+                               Define.request_code: JSON(request[Define.request_code] as! Int),
+                               Define.status: JSON(Define.success),
+                               Define.msg: JSON(Define.read),
+                               Define.data: dataDict]
         pthread_mutex_unlock(&self.LOCK)
         
         sendResponse(response: response, clientSocket: clientSocket)
@@ -194,11 +211,11 @@ class Server: NSObject {
         pthread_mutex_lock(&self.LOCK)
         let dataDict : JSON = [Define.timestamp: JSON(self.TIMESTAMP)]
         let response : JSON = [Define.server_id: JSON(self.ID),
-                        "plataform": JSON(Define.plataform),
-                        Define.request_code: JSON(request[Define.request_code] as! Int),
-                        Define.status: JSON(Define.success),
-                        Define.msg: JSON(Define.read_timestamp),
-                        Define.data: dataDict]
+                               "plataform": JSON(Define.plataform),
+                               Define.request_code: JSON(request[Define.request_code] as! Int),
+                               Define.status: JSON(Define.success),
+                               Define.msg: JSON(Define.read_timestamp),
+                               Define.data: dataDict]
         pthread_mutex_unlock(&self.LOCK)
         
         sendResponse(response: response, clientSocket: clientSocket)
@@ -212,8 +229,12 @@ class Server: NSObject {
      */
     func sendResponse(response: JSON, clientSocket: TCPClient)
     {
-            let responseJSONString = response.dump()
-            
-            _ = clientSocket.send(string: responseJSONString)
+        let responseJSONString = response.dump()
+        
+        _ = clientSocket.send(string: responseJSONString)
+        
+        if (self.VERBOSE == 2) {
+            print ("-----REQUEST SAINDO:----- " + responseJSONString)
+        }
     }
 }
