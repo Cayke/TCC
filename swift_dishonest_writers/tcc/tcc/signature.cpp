@@ -33,7 +33,6 @@ int verifySignature(const char *server_id, const unsigned char * originalMessage
     path += "server";
     path += server_id;
     path += "_public.pem";
-    path += server_id;
     FILE *file = fopen(path.c_str(), "r");
     if (file == NULL)
         return 0;
@@ -83,7 +82,6 @@ const char * signData(const char * server_id, const char * message, int messageS
     path += "server";
     path += server_id;
     path += "_private.pem";
-    path += server_id;
     FILE *file = fopen(path.c_str(), "r");
     if (file == NULL)
         return NULL;

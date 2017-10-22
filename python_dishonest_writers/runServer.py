@@ -1,10 +1,11 @@
 from server import Server
 import sys
 
-DEBUG = True
+DEBUG = False
 
 if DEBUG:
-    Server(0, 'localhost', 5000, 2, '/OneDrive/unb/TCC/DEV/certs/')
+    id = 1
+    Server(id, 'localhost', 5000 + id, 2, '/OneDrive/unb/TCC/DEV/certs/')
 
 else:
     if len(sys.argv) < 5:
@@ -15,7 +16,7 @@ else:
 
 
     ip = sys.argv[1]
-    id = sys.argv[2]
-    verbose = sys.argv[3]
+    id = int(sys.argv[2])
+    verbose = int(sys.argv[3])
     cert_path = sys.argv[4]
     Server(id, ip, 5000+id, verbose, cert_path)

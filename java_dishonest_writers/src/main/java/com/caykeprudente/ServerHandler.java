@@ -10,10 +10,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.security.Signature;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by cayke on 11/11/16.
@@ -30,11 +27,6 @@ public class ServerHandler implements Runnable {
     public ServerHandler(Server server, Socket socket) {
         this.server = server;
         this.socket = socket;
-//        try {
-//            this.socket.setTcpNoDelay(true);
-//        } catch (SocketException e) {
-//            e.printStackTrace();
-//        }
     }
 
 
@@ -48,48 +40,18 @@ public class ServerHandler implements Runnable {
 
         Boolean success = false;
 
-        String jsonMessage = readInputStream();
-        if (jsonMessage != null) {
-            HashMap<String, Object> request = new GsonBuilder().create().fromJson(jsonMessage, HashMap.class);
-
-            success = getRequestStatus(request);
-        }
+        Map message = Connection.read(this.socket);
 
         try {
+            getRequestStatus(message);
             socket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            if (this.server.verbose > 0)
+                System.out.println("Exception at run: " + e);
         }
 
-        if (success)
-            if (this.server.verbose > 0)
-                System.out.println("matando thread, operacao feita com sucesso");
-        else
-            if (this.server.verbose > 0)
-                System.out.println("matando thread, operacao nao obteve sucesso");
-    }
-
-
-    /*
-    Read message that is on the socket right now
-    return: (String) Message from client; null if error.
-    */
-    private String readInputStream() {
-        try {
-            int read = -1;
-            byte[] buffer = new byte[2048];
-            byte[] readData;
-            String readDataText;
-
-            read = socket.getInputStream().read(buffer);
-            readData = new byte[read];
-            System.arraycopy(buffer, 0, readData, 0, read);
-            readDataText = new String(readData, "UTF-8"); // assumption that client sends data UTF-8 encoded
-            //System.out.println("message part recieved:" + readDataText);
-            return readDataText;
-        } catch (Exception e) {
-            return null;
-        }
+        if (this.server.verbose > 0)
+            System.out.println("matando thread");
     }
 
 
@@ -98,7 +60,7 @@ public class ServerHandler implements Runnable {
     param: request - A dictionary with client's request data.
     return: (boolean) True for success, False for error.
     */
-    private boolean getRequestStatus(HashMap<String, Object> request) {
+    private boolean getRequestStatus(Map<String, Object> request) {
         String type = (String) request.get(Define.type);
         if (type.equals(Define.write) || type.equals(Define.write_back))
             return write(request, type);
@@ -121,7 +83,7 @@ public class ServerHandler implements Runnable {
             dictionary.put(Define.msg, Define.undefined_type);
 
             try {
-                sendMessageToClient(dictionary);
+                Connection.sendMessage(dictionary, this.socket);
             } catch (IOException e) {
                 return false;
             }
@@ -130,22 +92,10 @@ public class ServerHandler implements Runnable {
     }
 
     /*
-    Sends response to client.
-    param: response - A dictionary with serve's response data.
-    */
-    private void sendMessageToClient(HashMap response) throws IOException {
-        DataOutputStream dOut = new DataOutputStream(socket.getOutputStream());
-        dOut.write(new GsonBuilder().create().toJson(response).getBytes());
-        dOut.flush(); // Send the data
-        dOut.close();
-    }
-
-
-    /*
     Sends data in register for client.
     param: request - A dictionary with client's request data.
     */
-    private boolean read(HashMap request) {
+    private boolean read(Map request) {
         server.lock.lock();
         HashMap<String, Object> dataDict = new HashMap<String, Object>();
         dataDict.put(Define.variable, server.variable);
@@ -163,7 +113,7 @@ public class ServerHandler implements Runnable {
 
 
         try {
-            sendMessageToClient(response);
+            Connection.sendMessage(response, this.socket);
             return true;
         } catch (IOException e) {
             return false;
@@ -175,7 +125,7 @@ public class ServerHandler implements Runnable {
     Sends timestamp in register for client.
     param: request - A dictionary with client's request data.
     */
-    private boolean readTimestamp(HashMap request) {
+    private boolean readTimestamp(Map request) {
         server.lock.lock();
         HashMap<String, Object> dataDict = new HashMap<String, Object>();
         dataDict.put(Define.timestamp, server.timestamp);
@@ -190,7 +140,7 @@ public class ServerHandler implements Runnable {
             response.put(Define.data, dataDict);
 
         try {
-            sendMessageToClient(response);
+            Connection.sendMessage(response, this.socket);
             return true;
         } catch (IOException e) {
             return false;
@@ -202,7 +152,7 @@ public class ServerHandler implements Runnable {
     Write data in register if the requirements are followed.
     param: request - A dictionary with client's request data.
     */
-    private boolean write(HashMap request, String type) {
+    private boolean write(Map request, String type) {
         String variable = (String)request.get(Define.variable);
         int timestamp = ((Double) request.get(Define.timestamp)).intValue();
 
@@ -234,7 +184,7 @@ public class ServerHandler implements Runnable {
                 response.put(Define.msg, Define.variable_updated);
 
                 try {
-                    sendMessageToClient(response);
+                    Connection.sendMessage(response, this.socket);
                     return true;
                 } catch (IOException e) {
                     return false;
@@ -251,7 +201,7 @@ public class ServerHandler implements Runnable {
                 response.put(Define.msg, Define.invalid_echoes);
 
                 try {
-                    sendMessageToClient(response);
+                    Connection.sendMessage(response, this.socket);
                     return true;
                 } catch (IOException e) {
                     return false;
@@ -270,7 +220,8 @@ public class ServerHandler implements Runnable {
             response.put(Define.msg, Define.outdated_timestamp);
 
             try {
-                sendMessageToClient(response);
+                Connection.sendMessage(response, this.socket);
+
                 return true;
             } catch (IOException e) {
                 return false;
@@ -283,7 +234,7 @@ public class ServerHandler implements Runnable {
     Sends echo for timestamp and value
     param: request - A dictionary with client's request data.
     */
-    public boolean getEchoe(HashMap request) {
+    public boolean getEchoe(Map request) {
         String variable = (String)request.get(Define.variable);
         int timestamp = ((Double) request.get(Define.timestamp)).intValue();
 
@@ -321,7 +272,7 @@ public class ServerHandler implements Runnable {
         }
 
         try {
-            sendMessageToClient(response);
+            Connection.sendMessage(response, this.socket);
             return true;
         } catch (IOException e) {
             return false;

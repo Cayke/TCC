@@ -65,8 +65,9 @@ class Server(object):
 
         try:
             data = socketTCPThread.recv(2048)
+            message = data.decode('utf-8')
             if self.VERBOSE == 2:
-                print('-----REQUEST CHEGANDO:-----' + data)
+                print('-----REQUEST CHEGANDO:-----' + message)
             request = json.loads(data.decode('utf-8'))
             self.getRequestStatus(request,socketTCPThread)
         except Exception as msg:

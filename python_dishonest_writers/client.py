@@ -293,17 +293,18 @@ class Client ():
             if self.VERBOSE == 2:
                 print('-----REQUEST SAINDO:-----' + requestJSON)
 
-            messageFromServerJSON, server = TCPSocket.recvfrom(2048)
+            messageFromServer, server = TCPSocket.recvfrom(2048)
+            messageFromServerJSON = messageFromServer.decode('utf-8')
             if self.VERBOSE == 2:
                 print('-----REQUEST CHEGANDO:-----' + messageFromServerJSON)
 
-            messageFromServer = json.loads(messageFromServerJSON.decode('utf-8'))
-            if messageFromServer[Define.status] == Define.success:
+            messageFromServerJSON = json.loads(messageFromServerJSON)
+            if messageFromServerJSON[Define.status] == Define.success:
                 with self.LOCK:
                     self.INCREMENT_TIMESTAMP_BY = 1
 
                 if self.VERBOSE > 0:
-                    print('Variable updated on server ' + str(messageFromServer[Define.server_id]))
+                    print('Variable updated on server ' + str(messageFromServerJSON[Define.server_id]))
             else:
                 if self.VERBOSE > 0:
                     print('Error updating')
@@ -446,11 +447,12 @@ class Client ():
         if self.VERBOSE == 2:
             print('-----REQUEST SAINDO:-----' + requestJSON)
 
-        messageFromServerJSON, server = TCPSocket.recvfrom(2048)
+        messageFromServer, server = TCPSocket.recvfrom(2048)
+        messageFromServerJSON = messageFromServer.decode('utf-8')
         if self.VERBOSE == 2:
             print('-----REQUEST CHEGANDO:-----' + messageFromServerJSON)
 
-        return json.loads(messageFromServerJSON.decode('utf-8'))
+        return json.loads(messageFromServerJSON)
 
 
     '''
@@ -467,11 +469,12 @@ class Client ():
         if self.VERBOSE == 2:
             print('-----REQUEST SAINDO:-----' + requestJSON)
 
-        messageFromServerJSON, server = TCPSocket.recvfrom(2048)
+        messageFromServer, server = TCPSocket.recvfrom(2048)
+        messageFromServerJSON = messageFromServer.decode('utf-8')
         if self.VERBOSE == 2:
             print('-----REQUEST CHEGANDO:-----' + messageFromServerJSON)
 
-        return json.loads(messageFromServerJSON.decode('utf-8'))
+        return json.loads(messageFromServerJSON)
 
 
     '''
@@ -490,11 +493,12 @@ class Client ():
         if self.VERBOSE == 2:
             print('-----REQUEST SAINDO:-----' + requestJSON)
 
-        messageFromServerJSON, server = TCPSocket.recvfrom(2048)
+        messageFromServer, server = TCPSocket.recvfrom(2048)
+        messageFromServerJSON = messageFromServer.decode('utf-8')
         if self.VERBOSE == 2:
             print('-----REQUEST CHEGANDO:-----' + messageFromServerJSON)
 
-        return json.loads(messageFromServerJSON.decode('utf-8'))
+        return json.loads(messageFromServerJSON)
 
 
     '''

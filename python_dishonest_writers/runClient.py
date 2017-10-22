@@ -4,7 +4,7 @@ import sys
 DEBUG = False
 
 if DEBUG:
-    servers = [('node0.caykequoruns.freestore.emulab.net', 5000), ('node2.caykequoruns.freestore.emulab.net', 5000), ('node4.caykequoruns.freestore.emulab.net', 5000)]
+    servers = [('localhost', 5000), ('localhost', 5001), ('localhost', 5002), ('localhost', 5003)]
     Client(0, servers, 2, '/OneDrive/unb/TCC/DEV/certs/')
 
 else:
@@ -15,14 +15,14 @@ else:
         print (sys.argv)
 
 
-    id = sys.argv[1]
-    verbose = sys.argv[2]
+    id = int(sys.argv[1])
+    verbose = int(sys.argv[2])
     cert_path = sys.argv[3]
 
     servers = []
     i = 4
-    while i <= len(sys.argv):
-        servers.append((sys.argv[i], sys.argv[i+1]))
+    while i < len(sys.argv):
+        servers.append((sys.argv[i], int(sys.argv[i+1])))
         i = i+2
 
     Client(id, servers, verbose, cert_path)
