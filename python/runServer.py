@@ -11,7 +11,7 @@ else:
     if len(sys.argv) < 4:
         print("numero de argumentos invalidos. favor ler a documentacao")
         exit(-1)
-    elif sys.argv >= 1:
+    elif len(sys.argv) >= 1:
         print (sys.argv)
 
 
