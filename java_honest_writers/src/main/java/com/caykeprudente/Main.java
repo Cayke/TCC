@@ -7,18 +7,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
-    private static boolean DEBUG = true;
+    private static boolean DEBUG = false;
     public static int VERBOSE;
 
     public static void main(String[] args) {
         // write your code here
-        //runClient(args);
-        runServer(args);
+        runClient(args);
+        //runServer(args);
     }
 
     private static void runServer(String[] args) {
         if (DEBUG) {
-            Server server = new Server(0d, "localhost", 5000, 2);
+            Server server = new Server(1d, "localhost", 5001, 2);
             VERBOSE = 2;
             try {
                 server.waitForConnection();
@@ -27,9 +27,12 @@ public class Main {
             }
         }
         else {
-            if (args.length < 4) {
+            if (args.length < 3) {
                 System.out.println(String.format("Numero de argumentos invalidos: %d. Favor ler a documentacao", args.length));
                 return;
+            }
+            else if (VERBOSE == 2) {
+                System.out.println(args.toString());
             }
 
             String ip = args[0];
@@ -50,12 +53,13 @@ public class Main {
     private static void runClient(String[] args) {
         if (DEBUG) {
             List<Pair<String, Integer>> servers = new ArrayList<Pair<String, Integer>>();
-            servers.add(new Pair<String, Integer>("node0.caykequoruns.freestore.emulab.net", 5000));
-            servers.add(new Pair<String, Integer>("node1.caykequoruns.freestore.emulab.net", 5000));
-            servers.add(new Pair<String, Integer>("node2.caykequoruns.freestore.emulab.net", 5000));
+            servers.add(new Pair<String, Integer>("localhost", 5000));
+            servers.add(new Pair<String, Integer>("localhost", 5001));
+            servers.add(new Pair<String, Integer>("localhost", 5002));
+            servers.add(new Pair<String, Integer>("localhost", 5003));
             try {
-                new Client(0d, servers, 2, "/OneDrive/unb/TCC/DEV/certs/");
                 VERBOSE = 2;
+                new Client(0d, servers, 2, "/OneDrive/unb/TCC/DEV/certs/");
             } catch (Exception e) {
                 System.out.println("Deu ruim no client: " + e.toString());
             }
@@ -65,6 +69,9 @@ public class Main {
                 System.out.println(String.format("Numero de argumentos invalidos: %d. Favor ler a documentacao", args.length));
                 return;
             }
+            else if (VERBOSE == 2) {
+                System.out.println(args.toString());
+            }
 
             Double id = Double.valueOf(args[0]);
             int verbose = Integer.parseInt(args[1]);
@@ -72,8 +79,8 @@ public class Main {
             String cert_path = args[2];
 
             List<Pair<String, Integer>> servers = new ArrayList<Pair<String, Integer>>();
-            int i = 4;
-            while (i <= args.length) {
+            int i = 3;
+            while (i < args.length) {
                 servers.add(new Pair<String, Integer>(args[i], Integer.parseInt(args[i+1])));
                 i = i+2;
             }

@@ -29,7 +29,7 @@ class Server: NSObject {
      param: port - Server port
      param: verbose - Verbose level: 0 - no print, 1 - print important, 2 - print all
      */
-    init(id: Int, ip: String, port: Int, verbose: Int, cert_path: String) {
+    init(id: Int, ip: String, port: Int, verbose: Int) {
         print ("Servidor \(Define.plataform) \(id) rodando...")
         
         self.ID = id;

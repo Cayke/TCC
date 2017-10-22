@@ -56,24 +56,25 @@ class Server(object):
     def clientConnected(self, socketTCPThread):
         if self.VERBOSE > 0:
             print("Novo cliente conectado, nova thread criada")
-        while True:
-            try:
-                data = socketTCPThread.recv(2048)
-                request = json.loads(data.decode('utf-8'))
-                if self.VERBOSE == 2:
-                    print('-----REQUEST CHEGOU:-----' + request)
-                self.getRequestStatus(request,socketTCPThread)
-            except socket.error as msg:
-                if self.VERBOSE > 0:
-                    print('Error code: ' + str(msg[0]) + ', Error message: ' + str(msg[1]))
-                    print('matando thread')
-                socketTCPThread.close()
-                return False
-            except:
-                if self.VERBOSE > 0:
-                    print('matando thread')
-                socketTCPThread.close()
-                return False
+
+        try:
+            data = socketTCPThread.recv(2048)
+            message = data.decode('utf-8')
+            request = json.loads(message)
+            if self.VERBOSE == 2:
+                print('-----REQUEST CHEGOU:-----' + message)
+            self.getRequestStatus(request,socketTCPThread)
+        except socket.error as msg:
+            if self.VERBOSE > 0:
+                print('Error code: ' + str(msg[0]) + ', Error message: ' + str(msg[1]))
+
+        except Exception as e:
+            if self.VERBOSE > 0:
+                print('Exception: ' + str(e))
+
+        if self.VERBOSE > 0:
+            print('matando thread')
+        socketTCPThread.close()
 
     '''
     Analyse user's message and forwards to the correct handler.

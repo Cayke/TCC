@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by cayke on 11/11/16.
@@ -25,11 +26,6 @@ public class ServerHandler implements Runnable {
     public ServerHandler(Server server, Socket socket) {
         this.server = server;
         this.socket = socket;
-//        try {
-//            this.socket.setTcpNoDelay(true);
-//        } catch (SocketException e) {
-//            e.printStackTrace();
-//        }
     }
 
 
@@ -41,58 +37,26 @@ public class ServerHandler implements Runnable {
         if (this.server.verbose > 0)
             System.out.println("Novo cliente conectado, nova thread criada");
 
-        boolean shouldContinue = true;
-        while (shouldContinue) {
-            String jsonMessage = readInputStream();
-            if (jsonMessage != null) {
-                HashMap<String, Object> request = new GsonBuilder().create().fromJson(jsonMessage, HashMap.class);
-
-                shouldContinue = getRequestStatus(request);
-            }
-            else
-                shouldContinue = false;
-        }
+        Map message = Connection.read(this.socket);
 
         try {
+            getRequestStatus(message);
             socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            if (this.server.verbose > 0)
+                System.out.println("Exception at run: " + e);
         }
 
         if (this.server.verbose > 0)
             System.out.println("matando thread");
     }
 
-
-    /*
-    Read message that is on the socket right now
-    return: (String) Message from client; null if error.
-    */
-    private String readInputStream() {
-        try {
-            int read = -1;
-            byte[] buffer = new byte[2048];
-            byte[] readData;
-            String readDataText;
-
-            read = socket.getInputStream().read(buffer);
-            readData = new byte[read];
-            System.arraycopy(buffer, 0, readData, 0, read);
-            readDataText = new String(readData, "UTF-8"); // assumption that client sends data UTF-8 encoded
-            //System.out.println("message part recieved:" + readDataText);
-            return readDataText;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-
     /*
     Analyse user's message and forwards to the correct method.
     param: request - A dictionary with client's request data.
     return: (boolean) True for success, False for error.
     */
-    private boolean getRequestStatus(HashMap<String, Object> request) {
+    private boolean getRequestStatus(Map<String, Object> request) {
         String type = (String) request.get(Define.type);
         if (type.equals(Define.write))
             return write(request);
@@ -119,7 +83,7 @@ public class ServerHandler implements Runnable {
             dictionary.put(Define.msg, Define.undefined_type);
 
             try {
-                sendMessageToClient(dictionary);
+                Connection.sendMessage(dictionary, this.socket);
             } catch (IOException e) {
                 return false;
             }
@@ -128,22 +92,10 @@ public class ServerHandler implements Runnable {
     }
 
     /*
-    Sends response to client.
-    param: response - A dictionary with serve's response data.
-    */
-    private void sendMessageToClient(HashMap response) throws IOException {
-        DataOutputStream dOut = new DataOutputStream(socket.getOutputStream());
-        dOut.write(new GsonBuilder().create().toJson(response).getBytes());
-        dOut.flush(); // Send the data
-        dOut.close();
-    }
-
-
-    /*
     Sends data in register for client.
     param: request - A dictionary with client's request data.
     */
-    private boolean read(HashMap request) {
+    private boolean read(Map request) {
         server.lock.lock();
         HashMap<String, Object> response = new HashMap<String, Object>();
         try {
@@ -165,7 +117,7 @@ public class ServerHandler implements Runnable {
         }
 
         try {
-            sendMessageToClient(response);
+            Connection.sendMessage(response, this.socket);
             return true;
         } catch (IOException e) {
             return false;
@@ -177,7 +129,7 @@ public class ServerHandler implements Runnable {
     Sends timestamp in register for client.
     param: request - A dictionary with client's request data.
     */
-    private boolean readTimestamp(HashMap request) {
+    private boolean readTimestamp(Map request) {
         server.lock.lock();
         HashMap<String, Object> response = new HashMap<String, Object>();
         try {
@@ -196,7 +148,7 @@ public class ServerHandler implements Runnable {
         }
 
         try {
-            sendMessageToClient(response);
+            Connection.sendMessage(response, this.socket);
             return true;
         } catch (IOException e) {
             return false;
@@ -208,7 +160,7 @@ public class ServerHandler implements Runnable {
     Write data in register if the requirements are followed.
     param: request - A dictionary with client's request data.
     */
-    private boolean write(HashMap request) {
+    private boolean write(Map request) {
         String variable = (String)request.get(Define.variable);
         int timestamp = ((Double) request.get(Define.timestamp)).intValue();
         String data_signature = (String) request.get(Define.data_signature);
@@ -235,7 +187,7 @@ public class ServerHandler implements Runnable {
             server.lock.unlock();
 
             try {
-                sendMessageToClient(response);
+                Connection.sendMessage(response, this.socket);
                 return true;
             } catch (IOException e) {
                 return false;
@@ -253,7 +205,7 @@ public class ServerHandler implements Runnable {
             response.put(Define.msg, Define.outdated_timestamp);
 
             try {
-                sendMessageToClient(response);
+                Connection.sendMessage(response, this.socket);
                 return true;
             } catch (IOException e) {
                 return false;

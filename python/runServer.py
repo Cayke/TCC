@@ -4,7 +4,8 @@ import sys
 DEBUG = False
 
 if DEBUG:
-    Server(0, 'localhost', 5000, 2)
+    id = 2
+    Server(id, 'localhost', 5000 + id, 2)
 
 else:
     if len(sys.argv) < 4:
@@ -15,6 +16,6 @@ else:
 
 
     ip = sys.argv[1]
-    id = sys.argv[2]
-    verbose = sys.argv[3]
+    id = int(sys.argv[2])
+    verbose = int(sys.argv[3])
     Server(id, ip, 5000+id, verbose)

@@ -49,7 +49,7 @@ class Client ():
     def initUserInterface(self):
         while not self.exit:
             choice = 0
-            while choice != '1' and choice != '2' and choice != '3':
+            while choice != '1' and choice != 1 and choice != '2' and choice != 2 and choice != '3' and choice != 3:
                 self.cleanScreen()
                 print ('*********************************\n')
                 print ('O que deseja fazer?\n')
@@ -59,7 +59,7 @@ class Client ():
                 print ('*********************************\n')
                 choice = input()
 
-            if choice == '1':
+            if choice == '1' or choice == 1:
                 self.cleanScreen()
 
                 data = RepresentedData.getData()
@@ -67,10 +67,10 @@ class Client ():
                 if data != '':
                     self.write(data)
 
-            elif choice == '2':
+            elif choice == '2' or choice  == 2:
                 self.read()
 
-            elif choice == '3':
+            elif choice == '3' or choice == 3:
                 self.terminate()
 
         print('Adeus')
@@ -213,11 +213,13 @@ class Client ():
                 print('-----REQUEST SAINDO:-----' + requestJSON)
             TCPSocket.send(requestJSON.encode('utf-8'))
 
-            messageFromServerJSON, server = TCPSocket.recvfrom(2048)
+            messageFromServer, server = TCPSocket.recvfrom(2048)
+            messageFromServerJSON = messageFromServer.decode('utf-8')
             if self.VERBOSE == 2:
                 print('-----REQUEST CHEGANDO:-----' + messageFromServerJSON)
-            messageFromServer = json.loads(messageFromServerJSON.decode('utf-8'))
-            if messageFromServer[Define.status] == Define.success:
+
+            messageFromServerJSON = json.loads(messageFromServerJSON)
+            if messageFromServerJSON[Define.status] == Define.success:
                 if self.VERBOSE > 0:
                     print('Variable updated')
             else:
@@ -310,11 +312,12 @@ class Client ():
             print('-----REQUEST SAINDO:-----' + requestJSON)
         TCPSocket.send(requestJSON.encode('utf-8'))
 
-        messageFromServerJSON, server = TCPSocket.recvfrom(2048)
+        messageFromServer, server = TCPSocket.recvfrom(2048)
+        messageFromServerJSON = messageFromServer.decode('utf-8')
         if self.VERBOSE == 2:
             print('-----REQUEST CHEGANDO:-----' + messageFromServerJSON)
 
-        return json.loads(messageFromServerJSON.decode('utf-8'))
+        return json.loads(messageFromServerJSON)
 
 
     '''
@@ -331,11 +334,12 @@ class Client ():
             print('-----REQUEST SAINDO:-----' + requestJSON)
         TCPSocket.send(requestJSON.encode('utf-8'))
 
-        messageFromServerJSON, server = TCPSocket.recvfrom(2048)
+        messageFromServer, server = TCPSocket.recvfrom(2048)
+        messageFromServerJSON = messageFromServer.decode('utf-8')
         if self.VERBOSE == 2:
             print('-----REQUEST CHEGANDO:-----' + messageFromServerJSON)
 
-        return json.loads(messageFromServerJSON.decode('utf-8'))
+        return json.loads(messageFromServerJSON)
 
 
     '''
