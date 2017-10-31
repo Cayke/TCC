@@ -284,7 +284,7 @@ class Client ():
             for (server_id, signature) in echoes:
                 echoesArray.append(dict(server_id = server_id, data_signature = signature))
 
-            request = dict(type=type, timestamp=timestamp, variable=value, request_code = request_code, echoes = echoesArray)
+            request = dict(type=type, timestamp=timestamp, variable=value, request_code = request_code, echoes = echoesArray, client_id = self.ID, plataform = Define.plataform)
             requestJSON = json.dumps(request)
 
             TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -439,7 +439,7 @@ class Client ():
     param: request_code - Request ID identifier
     '''
     def getValueFromServer(self, server, request_code):
-        request = dict(type=Define.read, request_code =request_code)
+        request = dict(type=Define.read, request_code =request_code, client_id = self.ID, plataform = Define.plataform)
         requestJSON = json.dumps(request)
         TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TCPSocket.connect(server)
@@ -461,7 +461,7 @@ class Client ():
     param: request_code - Request ID identifier
     '''
     def getTimestampFromServer(self, server, request_code):
-        request = dict(type=Define.read_timestamp, request_code=request_code)
+        request = dict(type=Define.read_timestamp, request_code=request_code, client_id = self.ID, plataform = Define.plataform)
         requestJSON = json.dumps(request)
         TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TCPSocket.connect(server)
@@ -485,7 +485,7 @@ class Client ():
     param: timestamp - Timestamp from value
     '''
     def getEchoeFromServer(self, server, request_code, value, timestamp):
-        request = dict(type=Define.get_echoe, request_code=request_code, variable = value, timestamp = timestamp)
+        request = dict(type=Define.get_echoe, request_code=request_code, variable = value, timestamp = timestamp, client_id = self.ID, plataform = Define.plataform)
         requestJSON = json.dumps(request)
         TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TCPSocket.connect(server)

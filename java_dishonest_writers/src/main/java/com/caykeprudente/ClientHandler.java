@@ -80,6 +80,7 @@ public class ClientHandler implements Runnable {
         request.put( "variable", data.value);
         request.put( "request_code", data.request_code.intValue());
         request.put( "echoes", echoesArray);
+        injectClientInfo(request);
 
         Socket clientSocket = null;
         try {
@@ -124,6 +125,7 @@ public class ClientHandler implements Runnable {
         Map<String, Object> request = new HashMap<String, Object>();
         request.put( "type", Define.read);
         request.put( "request_code", data.request_code.intValue());
+        injectClientInfo(request);
 
         Socket clientSocket = null;
         try {
@@ -186,6 +188,7 @@ public class ClientHandler implements Runnable {
         Map<String, Object> request = new HashMap<String, Object>();
         request.put( "type", Define.read_timestamp);
         request.put( "request_code", data.request_code.intValue());
+        injectClientInfo(request);
 
         Socket clientSocket = null;
         try {
@@ -251,7 +254,7 @@ public class ClientHandler implements Runnable {
         request.put( "request_code", data.request_code.intValue());
         request.put( "variable", data.value);
         request.put( "timestamp", data.timestamp.intValue());
-
+        injectClientInfo(request);
 
         Socket clientSocket = null;
         try {
@@ -323,5 +326,10 @@ public class ClientHandler implements Runnable {
                 System.out.println("Response atrasada");
             
         }
+    }
+
+    private void injectClientInfo(Map<String, Object> request) {
+        request.put(Define.client_id, this.client.id.intValue());
+        request.put(Define.server_plataform, Define.plataform);
     }
 }

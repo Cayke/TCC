@@ -107,8 +107,8 @@ class Server(object):
                 if self.VERBOSE == 2:
                     print('-----REQUEST SAINDO:-----' + responseJSON)
 
-        except:
-            response = dict(server_id = self.ID, plataform = Define.plataform, status = Define.error, msg = Define.unknown_error)
+        except Exception as e:
+            response = dict(server_id = self.ID, plataform = Define.plataform, status = Define.error, msg = Define.unknown_error, error_msg = str(e))
             responseJSON = json.dumps(response)
             socketTCP.send(responseJSON.encode('utf-8'))
             if self.VERBOSE == 2:
