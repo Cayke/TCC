@@ -13,20 +13,6 @@ Install default jre
 
         $ sudo apt-get install default-jre
 
-Configurar variavel de ambiente
-
-        $ sudo update-alternatives --config java
-
-Copie o caminho da sua instalação preferencial e abra o arquivo /etc/environment utilizando o nano ou o seu editor de texto favorito.
-
-        $ sudo nano /etc/environment
-
-Ao final desse arquivo, adicione a seguinte linha, certificando-se de trocar o caminho destacado pelo seu caminho copiado.
-
-        JAVA_HOME="path do java"
-        $ source /etc/environment
-        $ echo $JAVA_HOME
-
 
 ## INSTALL SWIFT ##
 Download swift 3.1.1
