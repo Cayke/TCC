@@ -127,7 +127,7 @@ class Client ():
                     print('Li o dado do server:')
                     print("Timestamp: " + str(timestamp))
 
-                    return timestamp
+                return timestamp
 
             else:
                 if self.VERBOSE > 0:
