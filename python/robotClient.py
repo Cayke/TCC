@@ -23,11 +23,14 @@ class RobotClient ():
 
     VERBOSE = 0
     CERT_PATH = ''
+    RESULTS_PATH = ''
 
     exit = False
 
-    OPERATION_TIMERS = []
-
+    NUMBER_OF_EXECUTIONS = 0
+    OPERATION_TIMERS = [] #array with timers of operations
+    INIT_TIME = 0
+    FINAL_TIME = 0
 
     '''
     Client constructor.
@@ -35,16 +38,79 @@ class RobotClient ():
     param: servers - Array with servers(ip+port)
     param: verbose - Verbose level: 0 - no print, 1 - print important, 2 - print all  
     param: cert_path - Path to certificates
+    param: repeat_operations - number of times to repeat operation
+    param: operation - read or write
+    param: results_path - Path to save result txt
     '''
-    def __init__(self, id, servers, verbose, cert_path):
+    def __init__(self, id, servers, verbose, cert_path, repeat_operations, operation, results_path):
         self.ID = id
         self.SERVERS = servers
         self.VERBOSE = verbose
         self.CERT_PATH = cert_path
+        self.RESULTS_PATH = results_path
 
-        print('Client ' + Define.plataform + " " + str(self.ID) + 'running...')
-        self.initUserInterface()
+        print('Client ' + Define.plataform + " " + str(self.ID) + ' running...')
+        #self.initUserInterface()
+        self.makeRequests(repeat_operations, operation)
 
+
+    '''
+    Makes automated requests to servers
+    param: (int) n - Number of times to send requests
+    param: (string) type - read or write operarion
+    '''
+    def makeRequests(self, n, type):
+        self.NUMBER_OF_EXECUTIONS = n
+        self.INIT_TIME = time.time()
+
+        i = 0
+        if type == 'read':
+            while (i < n):
+                init_time = time.time()
+                self.read()
+                final_time = time.time()
+                self.OPERATION_TIMERS.append(final_time-init_time)
+                i += 1
+
+            self.FINAL_TIME = time.time()
+            self.writeExecutionInfo(self.RESULTS_PATH + 'client_' + str(self.ID) + '_read.txt')
+
+        elif type == 'write':
+            data = RepresentedData.getFakeData(200) #100kb
+            while (i < n):
+                init_time = time.time()
+                self.write(data)
+                final_time = time.time()
+                self.OPERATION_TIMERS.append(final_time-init_time)
+                i += 1
+
+            self.FINAL_TIME = time.time()
+            self.writeExecutionInfo(self.RESULTS_PATH + 'client_' + str(self.ID) + '_write.txt')
+
+
+    '''
+    Writes basic infos of execution in file
+    param: (string) path - File's path to write info
+    '''
+    def writeExecutionInfo(self, path):
+        file = open(path, 'w')
+
+        file.write(Define.execution_file_header)
+        infos = str(self.NUMBER_OF_EXECUTIONS) + ';' + str(self.getAverageOperationTime()) + ';' \
+                + str(self.INIT_TIME) + ';' + str(self.FINAL_TIME)
+        file.write(infos)
+        file.close()
+
+    '''
+    Calculates average time for operations
+    return: (float) average_time - Avarage time for operations
+    '''
+    def getAverageOperationTime(self):
+        count = 0
+        for time in self.OPERATION_TIMERS:
+            count = count + time
+
+        return count/len(self.OPERATION_TIMERS)
 
     '''
     Shows user inteface.
@@ -101,12 +167,13 @@ class RobotClient ():
         timestamp = self.readTimestamp()
         timestamp = self.incrementTimestamp(timestamp)
 
-        data_signature = Signature.signData(Signature.getPrivateKey(-1,self.ID, self.CERT_PATH), value+str(timestamp))
+        data_signature = Signature.signData(Signature.getPrivateKey(-1,self.ID%2, self.CERT_PATH), value+str(timestamp))
 
         for server in self.SERVERS:
             threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, data_signature, self.ID, self.REQUEST_CODE)).start()
 
-        self.REQUEST_CODE = self.REQUEST_CODE + 1
+        with self.LOCK:
+            self.REQUEST_CODE = self.REQUEST_CODE + 1
 
 
     '''
@@ -136,7 +203,7 @@ class RobotClient ():
                     print('Li o dado do server:')
                     print("Timestamp: " + str(timestamp))
 
-                    return timestamp
+                return timestamp
 
             else:
                 if self.VERBOSE > 0:
@@ -200,7 +267,8 @@ class RobotClient ():
             if timestamp != -1 and client_id != -1:
                 threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, data_signature, client_id, self.REQUEST_CODE)).start()
 
-        self.REQUEST_CODE = self.REQUEST_CODE + 1
+        with self.LOCK:
+            self.REQUEST_CODE = self.REQUEST_CODE + 1
 
 
     '''
@@ -386,7 +454,7 @@ class RobotClient ():
                 self.OUT_DATED_SERVERS.append(server)
 
             else:
-                if Signature.verifySign(Signature.getPublicKey(-1, r_client_id, self.CERT_PATH), data_sign, rValue + str(rTimestamp)):
+                if Signature.verifySign(Signature.getPublicKey(-1, r_client_id%2, self.CERT_PATH), data_sign, rValue + str(rTimestamp)):
                     if (rTimestamp == timestamp):
                         repeatTimes = repeatTimes + 1
                         auxServers.append(server)

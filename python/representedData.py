@@ -57,3 +57,18 @@ class RepresentedData():
 
         data = dict(name = name, age = age, carrer = carrer)
         return json.dumps(data)
+
+
+    '''
+    Generates fake data with defined size
+    param: size - Data size in bytes
+    return: (string) Data
+    '''
+    @staticmethod
+    def getFakeData(size):
+        # 65 bytes is the json message overhead with age 24 and name cayke
+        name = 'Cayke'
+        age = 24
+        carrer = 'a' * (size - 65)
+        data = dict(name=name, age=age, carrer=carrer)
+        return json.dumps(data)

@@ -1,7 +1,7 @@
 # plataform description
 plataform = "python"
 
-timeout = 5
+timeout = 15
 
 
 '''
@@ -47,3 +47,6 @@ invalid_signature = 'invalid_signature'
     OBS: The signature is in BASE64 format (to reduce the size)
     It is signed: Varaible+str(timestamp) -> data_signature
 '''
+
+execution_file_header = 'number_of_executions;average_time;initial_time;final_time\n'
+results_file_header = 'number_of_executions_per_client;clients;latency;throughput\n'
