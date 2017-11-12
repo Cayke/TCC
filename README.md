@@ -54,4 +54,17 @@ Exemplo de execucao:
 
 		client.py 0 2 /users/cayke/ node0.caykequoruns.freestore.emulab.net 5000 node1.caykequoruns.freestore.emulab.net 5001 node2.caykequoruns.freestore.emulab.net 5002
 		
+
+## Execucao testes (clientes automatizados) ##
+Criar a  pasta **results**.
+Executar o script de cliente:
+
+		./runPythonHonestClients.sh
+		
+Apos o termino das execucoes, executar o analisador dos resultados.
+
+		python3 runResultsAnalyser.py  
+
+		
+		
 		
