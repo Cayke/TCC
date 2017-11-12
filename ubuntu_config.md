@@ -2,6 +2,7 @@
 
 ## INSTALL OPENSLL FOR C++ ##
 
+        $ sudo apt-get update
         $ sudo apt-get install libssl-dev
         
         
@@ -11,6 +12,7 @@ Add on project compiler -std=c++11
 ## INSTALL JAVA ##
 Install default jre
 
+        $ sudo apt-get update
         $ sudo apt-get install default-jre
 
 
@@ -30,6 +32,7 @@ Get result from pwd as "path_to_swift_usr_bin"
 
 Install other must libraries
  
+        $ sudo apt-get update
         $ sudo apt-get install clang libicu-dev libcurl3 libpython2.7
 
 
