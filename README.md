@@ -63,7 +63,7 @@ Executar o script de cliente:
 		
 Apos o termino das execucoes, executar o analisador dos resultados.
 
-		python3 runResultsAnalyser.py  
+		python3 runResultsAnalyser.py  /{{path to results}}
 
 		
 		
