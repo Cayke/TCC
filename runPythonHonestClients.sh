@@ -1,7 +1,9 @@
 #!/bin/bash
-clients=64
+args=("$@")
+
+clients=args[0]
 operations=100
-i=0
+i=args[1]
 
 while [ $i -lt $clients ]
 do

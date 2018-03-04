@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
-    private static boolean DEBUG = false;
+    private static boolean DEBUG = true;
     public static int VERBOSE;
 
     public static void main(String[] args) {
@@ -51,13 +51,13 @@ public class Main {
     private static void runClient(String[] args) {
         if (DEBUG) {
             List<Pair<String, Integer>> servers = new ArrayList<Pair<String, Integer>>();
-            servers.add(new Pair<String, Integer>("localhost", 5000));
-            servers.add(new Pair<String, Integer>("localhost", 5001));
-            servers.add(new Pair<String, Integer>("localhost", 5002));
-            servers.add(new Pair<String, Integer>("localhost", 5003));
+            servers.add(new Pair<String, Integer>("192.168.0.199", 5000));
+            servers.add(new Pair<String, Integer>("192.168.0.199", 5001));
+            servers.add(new Pair<String, Integer>("192.168.0.199", 5002));
+            servers.add(new Pair<String, Integer>("192.168.0.199", 5003));
             try {
-                new Client(0d, servers, 2, "/OneDrive/unb/TCC/DEV/certs/");
                 VERBOSE = 2;
+                new Client(0d, servers, 2, "/OneDrive/unb/TCC/DEV/certs/");
             } catch (Exception e) {
                 System.out.println("Deu ruim no client: " + e.toString());
             }

@@ -1,10 +1,10 @@
 from client import Client
 import sys
 
-DEBUG = False
+DEBUG = True
 
 if DEBUG:
-    servers = [('localhost', 5000), ('localhost', 5001), ('localhost', 5002), ('localhost', 5003)]
+    servers = [('192.168.0.199', 5000), ('192.168.0.199', 5001), ('192.168.0.199', 5002), ('192.168.0.199', 5003)]
     Client(0, servers, 2, '/OneDrive/unb/TCC/DEV/certs/')
 
 else:
