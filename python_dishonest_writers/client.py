@@ -101,11 +101,16 @@ class Client ():
     def write(self, value):
         timestamp = self.readTimestamp()
         timestamp = self.incrementTimestamp(timestamp)
-        echoes = self.getEchoes(value, timestamp)
+        echoesResult = self.getEchoes(value, timestamp)
+
+        if (echoesResult is not None):
+            echoes, last_timestamp = echoesResult
+        else:
+            echoes = None
 
         if (echoes is not None):
             for server in self.SERVERS:
-                threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, echoes, self.REQUEST_CODE, Define.write)).start()
+                threading.Thread(target=self.writeOnServer, args=(server, value, last_timestamp, echoes, self.REQUEST_CODE, Define.write)).start()
 
             self.REQUEST_CODE = self.REQUEST_CODE + 1
 
@@ -192,7 +197,7 @@ class Client ():
                     if self.VERBOSE > 0:
                         print('Li os echos com sucesso')
 
-                    return validEchoes
+                    return validEchoes, timestamp
                 else:
                     if self.VERBOSE > 0:
                         print('Li os echos, mas nao deu quorum. Algum echo veio errado.')

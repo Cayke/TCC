@@ -85,9 +85,9 @@ class RobotClient ():
             self.writeExecutionInfo(self.RESULTS_PATH + 'client_' + str(self.ID) + '_read.txt')
 
         elif type == 'write':
-            data = RepresentedData.getFakeData(200)  # 100kb
             while (i < n):
                 init_time = time.time()
+                data = RepresentedData.getFakeData(200)  # 100kb
                 self.write(data)
                 final_time = time.time()
                 self.OPERATION_TIMERS.append(final_time - init_time)
@@ -179,11 +179,16 @@ class RobotClient ():
     def write(self, value):
         timestamp = self.readTimestamp()
         timestamp = self.incrementTimestamp(timestamp)
-        echoes = self.getEchoes(value, timestamp)
+        echoesResult = self.getEchoes(value, timestamp)
+
+        if (echoesResult is not None):
+            echoes, last_timestamp = echoesResult
+        else:
+            echoes = None
 
         if (echoes is not None):
             for server in self.SERVERS:
-                threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, echoes, self.REQUEST_CODE, Define.write)).start()
+                threading.Thread(target=self.writeOnServer, args=(server, value, last_timestamp, echoes, self.REQUEST_CODE, Define.write)).start()
 
             with self.LOCK:
                 self.REQUEST_CODE = self.REQUEST_CODE + 1
@@ -271,7 +276,7 @@ class RobotClient ():
                     if self.VERBOSE > 0:
                         print('Li os echos com sucesso')
 
-                    return validEchoes
+                    return validEchoes, timestamp
                 else:
                     if self.VERBOSE > 0:
                         print('Li os echos, mas nao deu quorum. Algum echo veio errado.')
