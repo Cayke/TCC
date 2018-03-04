@@ -34,7 +34,7 @@ def getInfoFromClients(path):
 
 #### MAIN FUNCTION ####
 if DEBUG:
-    path = '/OneDrive/unb/TCC/DEV/results/'
+    path = '/OneDrive/unb/TCC/git/results/'
     getInfoFromClients(path)
 
 

@@ -53,3 +53,5 @@ invalid_echoes = 'invalid_echoes'
     OBS: The signature is in BASE64 format (to reduce the size)
     It is signed: Variable+str(timestamp) -> data_signature
 '''
+
+execution_file_header = 'number_of_executions;average_time;initial_time;final_time\n'
