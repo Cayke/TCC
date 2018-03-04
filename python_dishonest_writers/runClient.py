@@ -1,11 +1,12 @@
 from client import Client
+from robotClient import RobotClient
 import sys
 
 DEBUG = True
 
 if DEBUG:
-    servers = [('192.168.0.199', 5000), ('192.168.0.199', 5001), ('192.168.0.199', 5002), ('192.168.0.199', 5003)]
-    Client(0, servers, 2, '/OneDrive/unb/TCC/DEV/certs/')
+    servers = [('localhost', 5000), ('localhost', 5001), ('localhost', 5002), ('localhost', 5003)]
+    RobotClient(1, servers, 1, '/OneDrive/unb/TCC/git/certs/', 250, 'read', '/OneDrive/unb/TCC/git/results/')
 
 else:
     if len(sys.argv) < 10:

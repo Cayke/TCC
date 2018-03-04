@@ -5,7 +5,7 @@ DEBUG = True
 
 if DEBUG:
     id = 3
-    Server(id, 'localhost', 5000 + id, 2, '/OneDrive/unb/TCC/DEV/certs/')
+    Server(id, 'localhost', 5000 + id, 2, '/OneDrive/unb/TCC/git/certs/')
 
 else:
     if len(sys.argv) < 5:
