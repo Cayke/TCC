@@ -1,4 +1,6 @@
 import json
+import random
+import string
 
 class RepresentedData():
     # representar uma pessoa por exemplo
@@ -69,6 +71,6 @@ class RepresentedData():
         # 65 bytes is the json message overhead with age 24 and name cayke
         name = 'Cayke'
         age = 24
-        carrer = 'a' * (size - 65)
+        carrer = random.choice(string.ascii_letters) * (size - 65)
         data = dict(name=name, age=age, carrer=carrer)
         return json.dumps(data)

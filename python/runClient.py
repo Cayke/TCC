@@ -5,7 +5,7 @@ DEBUG = True
 
 if DEBUG:
     servers = [('node0.caykequoruns.freestore.emulab.net', 5000), ('node1.caykequoruns.freestore.emulab.net', 5001), ('node2.caykequoruns.freestore.emulab.net', 5002), ('node3.caykequoruns.freestore.emulab.net', 5003)]
-    RobotClient(1, servers, 1, '/OneDrive/unb/TCC/DEV/certs/', 250, 'read', '/OneDrive/unb/TCC/DEV/results/')
+    RobotClient(1, servers, 1, '/OneDrive/unb/TCC/git/certs/', 250, 'read', '/OneDrive/unb/TCC/git/results/')
 
 else:
     if len(sys.argv) < 13:

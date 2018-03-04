@@ -76,9 +76,9 @@ class RobotClient ():
             self.writeExecutionInfo(self.RESULTS_PATH + 'client_' + str(self.ID) + '_read.txt')
 
         elif type == 'write':
-            data = RepresentedData.getFakeData(200) #100kb
             while (i < n):
                 init_time = time.time()
+                data = RepresentedData.getFakeData(200)  # 100kb
                 self.write(data)
                 final_time = time.time()
                 self.OPERATION_TIMERS.append(final_time-init_time)
