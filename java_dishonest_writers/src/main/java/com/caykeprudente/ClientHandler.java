@@ -102,6 +102,7 @@ public class ClientHandler implements Runnable {
 
 
         String status = (String) messageFromServer.get(Define.status);
+        String msg = (String) messageFromServer.get(Define.msg);
         if (status.equals(Define.success)) {
             client.lock.lock();
             client.increment_timestamp_by = 1;
@@ -109,7 +110,16 @@ public class ClientHandler implements Runnable {
 
             if (this.client.verbose > 0)
                 System.out.println("Variable updated");
-        } else {
+        }
+        else if (status.equals(Define.error) && msg.equals(Define.outdated_timestamp)) {
+            client.lock.lock();
+            client.increment_timestamp_by = 1;
+            client.lock.unlock();
+            
+            if (this.client.verbose > 0)
+                System.out.println("Tried to write, but there is a newest data already");
+        }
+        else {
             if (this.client.verbose > 0)
                 System.out.println("Error updating");
             

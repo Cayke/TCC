@@ -299,6 +299,9 @@ class RobotClient ():
             if messageFromServerJSON[Define.status] == Define.success:
                 if self.VERBOSE > 0:
                     print('Variable updated')
+            elif messageFromServerJSON[Define.status] == Define.error and messageFromServerJSON[Define.msg] == Define.outdated_timestamp:
+                if self.VERBOSE > 0:
+                    print('Tried to write, but there is a newest data already')
             else:
                 if self.VERBOSE > 0:
                     print('Error updating')

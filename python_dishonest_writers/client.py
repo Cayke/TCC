@@ -310,6 +310,12 @@ class Client ():
 
                 if self.VERBOSE > 0:
                     print('Variable updated on server ' + str(messageFromServerJSON[Define.server_id]))
+            elif messageFromServerJSON[Define.status] == Define.error and messageFromServerJSON[Define.msg] == Define.outdated_timestamp:
+                with self.LOCK:
+                    self.INCREMENT_TIMESTAMP_BY = 1
+
+                if self.VERBOSE > 0:
+                    print('Tried to write, but there is a newest data already')
             else:
                 if self.VERBOSE > 0:
                     print('Error updating')
