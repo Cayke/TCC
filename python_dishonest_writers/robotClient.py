@@ -369,7 +369,7 @@ class RobotClient ():
             for (server_id, signature) in echoes:
                 echoesArray.append(dict(server_id = server_id, data_signature = signature))
 
-            request = dict(type=type, timestamp=timestamp, variable=value, request_code = request_code, echoes = echoesArray, client_id = self.ID, plataform = Define.plataform)
+            request = dict(type=type, timestamp=int(timestamp), variable=value, request_code = request_code, echoes = echoesArray, client_id = self.ID, plataform = Define.plataform)
             requestJSON = json.dumps(request)
 
             TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -570,7 +570,7 @@ class RobotClient ():
     param: timestamp - Timestamp from value
     '''
     def getEchoeFromServer(self, server, request_code, value, timestamp):
-        request = dict(type=Define.get_echoe, request_code=request_code, variable = value, timestamp = timestamp, client_id = self.ID, plataform = Define.plataform)
+        request = dict(type=Define.get_echoe, request_code=request_code, variable = value, timestamp = int(timestamp), client_id = self.ID, plataform = Define.plataform)
         requestJSON = json.dumps(request)
         TCPSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         TCPSocket.connect(server)
