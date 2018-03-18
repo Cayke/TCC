@@ -155,6 +155,7 @@ public class ServerHandler implements Runnable {
     private boolean write(Map request, String type) {
         String variable = (String)request.get(Define.variable);
         int timestamp = ((Double) request.get(Define.timestamp)).intValue();
+        int client_id = ((Double) request.get(Define.client_id)).intValue();
 
         List<LinkedTreeMap<String, Object>> echoesArray = (List<LinkedTreeMap<String, Object>>) request.get(Define.echoes);
         List<Pair<Double, String>> echoes = new ArrayList<Pair<Double, String>>();
@@ -163,7 +164,7 @@ public class ServerHandler implements Runnable {
         }
 
         server.lock.lock();
-        if (timestamp > server.timestamp)
+        if (timestamp > server.timestamp || (timestamp == server.timestamp && client_id > server.client_id))
         {
             if (isEchoValid(echoes, variable, timestamp, type)) {
                 server.variable = variable;

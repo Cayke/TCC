@@ -37,6 +37,7 @@ namespace server{
     std::string VARIABLE = "";
     int TIMESTAMP = -1;
     std::string DATA_SIGNATURE = "";
+    int CLIENT_ID = -1;
     
     std::vector<std::pair<int, std::string>> LAST_ECHOED_VALUES; //contem uma tupla (timestamp,value)
     
@@ -189,14 +190,16 @@ namespace server{
         std::string variable = getStringWithKeyFromDocument(request, Define::variable);
         int timestamp = getIntWithKeyFromDocument(request, Define::timestamp);
         std::vector<std::pair<int, std::string>> echoes = getEchoesArrayWithKeyFromDocument(request, Define::echoes);
+        int client_id = getIntWithKeyFromDocument(request, Define::client_id);
         
         LOCK.lock();
-        if (timestamp > TIMESTAMP)
+        if (timestamp > TIMESTAMP || (timestamp == TIMESTAMP && client_id > CLIENT_ID))
         {
             if (isEchoValid(echoes, variable, timestamp, type)) {
                 VARIABLE = variable;
                 TIMESTAMP = timestamp;
                 DATA_SIGNATURE = signData(ID, variable + std::to_string(timestamp), CERT_PATH);
+                CLIENT_ID = client_id;
                 LAST_ECHOED_VALUES.clear();
                 LOCK.unlock();
                 

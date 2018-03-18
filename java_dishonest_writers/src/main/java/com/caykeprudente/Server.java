@@ -25,6 +25,7 @@ public class Server
     public String variable = "";
     public int timestamp = -1;
     public String data_signature = "";
+    public int client_id = -1;
 
     public List<Pair<Integer, String>> last_echoed_values = new ArrayList<Pair<Integer, String>>();
 

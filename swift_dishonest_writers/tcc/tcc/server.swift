@@ -19,6 +19,7 @@ class Server: NSObject {
     var VARIABLE = "";
     var TIMESTAMP = -1;
     var DATA_SIGNATURE = "";
+    var CLIENT_ID = -1;
     
     var LOCK = pthread_mutex_t();
     
@@ -152,6 +153,7 @@ class Server: NSObject {
     func write (request: Dictionary<String, Any>, clientSocket: TCPClient, type:String) {
         let variable : String = request[Define.variable] as! String
         let timestamp : Int = request[Define.timestamp] as! Int
+        let client_id : Int = request[Define.client_id] as! Int
         
         let echoesArray : [Dictionary<String, Any>] = request[Define.echoes] as! [Dictionary<String, Any>]
         var echoes : [(Int, String)] = []
@@ -161,7 +163,7 @@ class Server: NSObject {
         
         
         pthread_mutex_lock(&self.LOCK)
-        if timestamp > self.TIMESTAMP {
+        if timestamp > self.TIMESTAMP || (timestamp == self.TIMESTAMP && client_id > self.CLIENT_ID) {
             if (isEchoValid(echoes: echoes, value: variable, timestamp: timestamp, type: type)) {
                 self.VARIABLE = variable
                 self.TIMESTAMP = timestamp

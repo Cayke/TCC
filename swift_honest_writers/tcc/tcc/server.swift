@@ -146,7 +146,7 @@ class Server: NSObject {
         let client_id : Int = request[Define.client_id] as! Int
         
         pthread_mutex_lock(&self.LOCK)
-        if timestamp > self.TIMESTAMP {
+        if timestamp > self.TIMESTAMP || (timestamp == self.TIMESTAMP && client_id > self.CLIENT_ID) {
             if self.VERBOSE > 0 {
                 print ("Recebido variable = \(variable) e timestamp = \(timestamp)")
             }

@@ -16,6 +16,7 @@ class Server(object):
     VARIABLE = ''
     DATA_SIGNATURE = ''
     TIMESTAMP = -1
+    CLIENT_ID = -1
 
     LAST_ECHOED_VALUES = [] #contem uma tupla (timestamp,value)
 
@@ -122,6 +123,7 @@ class Server(object):
     def write(self, request, socketTCP, type):
         variable = request[Define.variable]
         timestamp = request[Define.timestamp]
+        client_id = request[Define.client_id]
 
         echoesArray = request[Define.echoes]
         echoes = []
@@ -129,7 +131,7 @@ class Server(object):
             echoes.append((dictionary[Define.server_id], dictionary[Define.data_signature]))
 
         self.LOCK.acquire()
-        if timestamp > self.TIMESTAMP:
+        if timestamp > self.TIMESTAMP or (timestamp == self.TIMESTAMP and client_id > self.CLIENT_ID):
             if self.isEchoValid(echoes, variable, timestamp, type):
                 self.VARIABLE = variable
                 self.TIMESTAMP = timestamp

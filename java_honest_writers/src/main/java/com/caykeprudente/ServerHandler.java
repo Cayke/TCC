@@ -167,7 +167,7 @@ public class ServerHandler implements Runnable {
         int client_id = ((Double) request.get(Define.client_id)).intValue();
 
         server.lock.lock();
-        if (timestamp > server.timestamp)
+        if (timestamp > server.timestamp || (timestamp == server.timestamp && client_id > server.client_id))
         {
             if (this.server.verbose > 0)
                 System.out.println("Recebido variable = " + variable + " e timestamp " + timestamp);

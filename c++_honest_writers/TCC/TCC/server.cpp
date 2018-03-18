@@ -191,7 +191,7 @@ namespace server{
             std::cout << "Recebido variable = " + variable + " e timestamp " + std::to_string(timestamp) + "\n";
         
         LOCK.lock();
-        if (timestamp > TIMESTAMP)
+        if (timestamp > TIMESTAMP || (timestamp == TIMESTAMP && client_id > CLIENT_ID))
         {
             VARIABLE = variable;
             TIMESTAMP = timestamp;

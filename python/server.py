@@ -126,7 +126,7 @@ class Server(object):
         client_id = request[Define.client_id]
 
         self.LOCK.acquire()
-        if timestamp > self.TIMESTAMP:
+        if timestamp > self.TIMESTAMP or (timestamp == self.TIMESTAMP and client_id > self.CLIENT_ID):
             if self.VERBOSE > 0:
                 print("Recebido variable = " + variable + " e timestamp " + str(timestamp))
 
