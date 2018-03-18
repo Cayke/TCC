@@ -18,7 +18,7 @@ public class Main {
 
     private static void runServer(String[] args) {
         if (DEBUG) {
-            Server server = new Server(2d, "localhost", 5002, 2, "/OneDrive/unb/TCC/DEV/certs/");
+            Server server = new Server(2, "localhost", 5002, 2, "/OneDrive/unb/TCC/DEV/certs/");
             VERBOSE = 2;
             try {
                 server.waitForConnection();
@@ -39,7 +39,7 @@ public class Main {
             String cert_path = args[3];
             int port = 5000 + id.intValue();
 
-            Server server = new Server(id, ip, port, verbose, cert_path);
+            Server server = new Server(id.intValue(), ip, port, verbose, cert_path);
             try {
                 server.waitForConnection();
             } catch (Exception e) {
@@ -57,7 +57,7 @@ public class Main {
             servers.add(new Pair<String, Integer>("192.168.0.199", 5003));
             try {
                 VERBOSE = 2;
-                new Client(0d, servers, 2, "/OneDrive/unb/TCC/DEV/certs/");
+                new Client(0, servers, 2, "/OneDrive/unb/TCC/DEV/certs/");
             } catch (Exception e) {
                 System.out.println("Deu ruim no client: " + e.toString());
             }
@@ -85,7 +85,7 @@ public class Main {
             }
 
             try {
-                new Client(id, servers, verbose, cert_path);
+                new Client(id.intValue(), servers, verbose, cert_path);
             } catch (Exception e) {
                 System.out.println("Deu ruim no client: " + e.toString());
             }

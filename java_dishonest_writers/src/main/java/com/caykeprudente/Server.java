@@ -6,7 +6,9 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -17,7 +19,7 @@ public class Server
 {
     public String host = "";
     public int port = -1;
-    public Double id = -1d;
+    public int id = -1;
 
     public int faults = 1; //number of faults system can handle
     public int quorum = 2*faults + 1;
@@ -27,7 +29,7 @@ public class Server
     public String data_signature = "";
     public int client_id = -1;
 
-    public List<Pair<Integer, String>> last_echoed_values = new ArrayList<Pair<Integer, String>>();
+    public Map<Integer, List<Pair<Integer, String>>> echoed_values = new HashMap<Integer, List<Pair<Integer, String>>>();
 
     Lock lock = new ReentrantLock();
 
@@ -44,7 +46,7 @@ public class Server
     param: cert_path - Path to certificates
 
     */
-    public Server (Double id, String ip, int port, int verbose, String cert_path)
+    public Server (int id, String ip, int port, int verbose, String cert_path)
     {
         this.host = ip;
         this.id = id;
