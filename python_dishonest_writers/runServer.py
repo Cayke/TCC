@@ -1,10 +1,10 @@
 from server import Server
 import sys
 
-DEBUG = False
+DEBUG = True
 
 if DEBUG:
-    id = 1
+    id = 2
     Server(id, 'localhost', 5000 + id, 1, '/OneDrive/unb/TCC/git/certs/')
 
 else:

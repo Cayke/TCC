@@ -13,7 +13,7 @@ public class Server
 {
     public String host = "";
     public int port = -1;
-    public Double id = -1d;
+    public int id = -1;
 
     public String variable = "";
     public int timestamp = -1;
@@ -31,7 +31,7 @@ public class Server
     param: port - Server port
     param: verbose - Verbose level: 0 - no print, 1 - print important, 2 - print all
     */
-    public Server (Double id, String ip, int port, int verbose)
+    public Server (int id, String ip, int port, int verbose)
     {
         this.host = ip;
         this.id = id;

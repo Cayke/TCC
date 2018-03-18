@@ -9,11 +9,11 @@
 #include <iostream>
 #include "server.hpp"
 
-bool debug = false;
+bool debug = true;
 
 int main(int argc, const char * argv[]) {
     if (debug) {
-        int id = 3;
+        int id = 0;
         server::init(id, "localhost", 5000 + id, 2);
     }
     else {

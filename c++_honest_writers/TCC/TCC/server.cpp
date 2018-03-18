@@ -29,7 +29,7 @@ namespace server{
     int VERBOSE = 0;
     
     std::string VARIABLE = "";
-    unsigned int TIMESTAMP = -1;
+    unsigned int TIMESTAMP = 0;
     std::string DATA_SIGNATURE = "";
     int CLIENT_ID = -1;
     

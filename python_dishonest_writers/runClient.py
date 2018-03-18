@@ -2,11 +2,12 @@ from client import Client
 from robotClient import RobotClient
 import sys
 
-DEBUG = False
+DEBUG = True
 
 if DEBUG:
-    servers = [('node0.caykequoruns.freestore.emulab.net', 5000), ('node1.caykequoruns.freestore.emulab.net', 5001), ('node2.caykequoruns.freestore.emulab.net', 5002), ('node3.caykequoruns.freestore.emulab.net', 5003)]
-    RobotClient(1, servers, 2, '/OneDrive/unb/TCC/git/certs/', 250, 'read', '/OneDrive/unb/TCC/git/results/')
+    servers = [('localhost', 5000), ('localhost', 5001), ('localhost', 5002), ('localhost', 5003)]
+    Client(1, servers, 2, '/OneDrive/unb/TCC/git/certs/')
+    # RobotClient(1, servers, 2, '/OneDrive/unb/TCC/git/certs/', 250, 'read', '/OneDrive/unb/TCC/git/results/')
 
 else:
     if len(sys.argv) < 13:

@@ -35,7 +35,7 @@ namespace server{
     int QUORUM = 2*FAULTS + 1;
     
     std::string VARIABLE = "";
-    unsigned int TIMESTAMP = -1;
+    unsigned int TIMESTAMP = 0;
     std::string DATA_SIGNATURE = "";
     int CLIENT_ID = -1;
     

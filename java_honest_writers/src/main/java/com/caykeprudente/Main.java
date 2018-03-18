@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
-    private static boolean DEBUG = false;
+    private static boolean DEBUG = true;
     public static int VERBOSE;
 
     public static void main(String[] args) {
@@ -18,7 +18,8 @@ public class Main {
 
     private static void runServer(String[] args) {
         if (DEBUG) {
-            Server server = new Server(1d, "localhost", 5001, 2);
+            int id = 2;
+            Server server = new Server(id, "localhost", 5000 + id, 2);
             VERBOSE = 2;
             try {
                 server.waitForConnection();
@@ -36,10 +37,10 @@ public class Main {
             }
 
             String ip = args[0];
-            Double id = Double.valueOf(args[1]);
+            int id = Double.valueOf(args[1]).intValue();
             int verbose = Integer.parseInt(args[2]);
             VERBOSE = verbose;
-            int port = 5000 + id.intValue();
+            int port = 5000 + id;
 
             Server server = new Server(id, ip, port, verbose);
             try {
@@ -59,7 +60,7 @@ public class Main {
             servers.add(new Pair<String, Integer>("localhost", 5003));
             try {
                 VERBOSE = 2;
-                new Client(0d, servers, 2, "/OneDrive/unb/TCC/DEV/certs/");
+                new Client(0d, servers, 2, "/OneDrive/unb/TCC/git/certs/");
             } catch (Exception e) {
                 System.out.println("Deu ruim no client: " + e.toString());
             }

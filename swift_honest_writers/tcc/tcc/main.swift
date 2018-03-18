@@ -8,10 +8,11 @@
 
 import Foundation
 
-let debug = false
+let debug = true
 
 if debug {
-    Server(id: 2, ip: "127.0.0.1", port: 5002, verbose: 2).waitForConnection();
+    let id = 1
+    Server(id: id, ip: "127.0.0.1", port: 5000 + id, verbose: 2).waitForConnection();
 }
 else {
     let arguments = CommandLine.arguments

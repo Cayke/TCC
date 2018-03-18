@@ -1,10 +1,10 @@
 from server import Server
 import sys
 
-DEBUG = False
+DEBUG = True
 
 if DEBUG:
-    id = 2
+    id = 3
     Server(id, 'localhost', 5000 + id, 2)
 
 else:

@@ -12,13 +12,14 @@ public class Main {
 
     public static void main(String[] args) {
         // write your code here
-        runClient(args);
-        //runServer(args);
+        //runClient(args);
+        runServer(args);
     }
 
     private static void runServer(String[] args) {
         if (DEBUG) {
-            Server server = new Server(2, "localhost", 5002, 2, "/OneDrive/unb/TCC/DEV/certs/");
+            int id = 3;
+            Server server = new Server(id, "localhost", 5000 + id, 2, "/OneDrive/unb/TCC/DEV/certs/");
             VERBOSE = 2;
             try {
                 server.waitForConnection();
