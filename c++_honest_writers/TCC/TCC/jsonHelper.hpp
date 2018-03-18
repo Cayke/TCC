@@ -15,6 +15,7 @@
 
 rapidjson::Document parseJsonStringToDocument (std::string jsonString);
 int getIntWithKeyFromDocument(rapidjson::Document *document, std::string key);
+unsigned int getUnsignedIntWithKeyFromDocument(rapidjson::Document *document, std::string key);
 std::string getStringWithKeyFromDocument(rapidjson::Document *document, std::string key);
 std::string getJSONStringForDocument(rapidjson::Document *document);
 void addValueToDocument(rapidjson::Document *document, std::string key, int value);

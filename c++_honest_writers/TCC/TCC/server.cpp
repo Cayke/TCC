@@ -29,7 +29,7 @@ namespace server{
     int VERBOSE = 0;
     
     std::string VARIABLE = "";
-    int TIMESTAMP = -1;
+    unsigned int TIMESTAMP = -1;
     std::string DATA_SIGNATURE = "";
     int CLIENT_ID = -1;
     
@@ -183,7 +183,7 @@ namespace server{
     void write(rapidjson::Document *request, int socketTCP)
     {
         std::string variable = getStringWithKeyFromDocument(request, Define::variable);
-        int timestamp = getIntWithKeyFromDocument(request, Define::timestamp);
+        unsigned int timestamp = getUnsignedIntWithKeyFromDocument(request, Define::timestamp);
         std::string data_signature = getStringWithKeyFromDocument(request, Define::data_signature);
         int client_id = getIntWithKeyFromDocument(request, Define::client_id);
         

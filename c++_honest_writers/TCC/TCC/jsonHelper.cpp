@@ -34,6 +34,13 @@ int getIntWithKeyFromDocument(rapidjson::Document *document, std::string key)
     return value->value.GetInt();
 }
 
+unsigned int getUnsignedIntWithKeyFromDocument(rapidjson::Document *document, std::string key) {
+    Value::MemberIterator value = document->FindMember(key.c_str());
+    assert(value != document->MemberEnd());
+    assert(value->value.IsUint());
+    return value->value.GetUint();
+}
+
 std::string getStringWithKeyFromDocument(rapidjson::Document *document, std::string key)
 {
     Value::MemberIterator value = document->FindMember(key.c_str());

@@ -35,7 +35,7 @@ namespace server{
     int QUORUM = 2*FAULTS + 1;
     
     std::string VARIABLE = "";
-    int TIMESTAMP = -1;
+    unsigned int TIMESTAMP = -1;
     std::string DATA_SIGNATURE = "";
     int CLIENT_ID = -1;
     
@@ -188,7 +188,7 @@ namespace server{
     void write(rapidjson::Document *request, int socketTCP, std::string type)
     {
         std::string variable = getStringWithKeyFromDocument(request, Define::variable);
-        int timestamp = getIntWithKeyFromDocument(request, Define::timestamp);
+        unsigned int timestamp = getUnsignedIntWithKeyFromDocument(request, Define::timestamp);
         std::vector<std::pair<int, std::string>> echoes = getEchoesArrayWithKeyFromDocument(request, Define::echoes);
         int client_id = getIntWithKeyFromDocument(request, Define::client_id);
         
@@ -321,7 +321,7 @@ namespace server{
     */
     void getEchoe(rapidjson::Document *request, int socketTCP) {
         std::string variable = getStringWithKeyFromDocument(request, Define::variable);
-        int timestamp = getIntWithKeyFromDocument(request, Define::timestamp);
+        unsigned int timestamp = getUnsignedIntWithKeyFromDocument(request, Define::timestamp);
         
         if (timestamp < TIMESTAMP) {
             rapidjson::Document document;
