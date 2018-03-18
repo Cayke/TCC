@@ -76,7 +76,7 @@ public class ServerHandler implements Runnable {
 
         else {
             HashMap<String, Object> dictionary = new HashMap<String, Object>();
-            dictionary.put(Define.server_id, server.id.intValue());
+            dictionary.put(Define.server_id, server.id);
             dictionary.put("plataform", Define.plataform);
             dictionary.put(Define.request_code, request.get(Define.request_code));
             dictionary.put(Define.status, Define.error);
@@ -104,7 +104,7 @@ public class ServerHandler implements Runnable {
         server.lock.unlock();
 
         HashMap<String, Object> response = new HashMap<String, Object>();
-        response.put(Define.server_id, server.id.intValue());
+        response.put(Define.server_id, server.id);
         response.put("plataform", Define.plataform);
         response.put(Define.request_code, request.get(Define.request_code));
         response.put(Define.status, Define.success);
@@ -132,7 +132,7 @@ public class ServerHandler implements Runnable {
         server.lock.unlock();
 
         HashMap<String, Object> response = new HashMap<String, Object>();
-            response.put(Define.server_id, server.id.intValue());
+            response.put(Define.server_id, server.id);
             response.put("plataform", Define.plataform);
             response.put(Define.request_code, request.get(Define.request_code));
             response.put(Define.status, Define.success);
@@ -158,9 +158,9 @@ public class ServerHandler implements Runnable {
         int client_id = ((Double) request.get(Define.client_id)).intValue();
 
         List<LinkedTreeMap<String, Object>> echoesArray = (List<LinkedTreeMap<String, Object>>) request.get(Define.echoes);
-        List<Pair<Double, String>> echoes = new ArrayList<Pair<Double, String>>();
+        List<Pair<Integer, String>> echoes = new ArrayList<Pair<Integer, String>>();
         for (LinkedTreeMap<String, Object> dict : echoesArray) {
-            echoes.add(new Pair<Double, String>((Double) dict.get(Define.server_id), (String) dict.get(Define.data_signature)));
+            echoes.add(new Pair<Integer, String>(((Double) dict.get(Define.server_id)).intValue(), (String) dict.get(Define.data_signature)));
         }
 
         server.lock.lock();
@@ -169,8 +169,7 @@ public class ServerHandler implements Runnable {
             if (isEchoValid(echoes, variable, timestamp, type)) {
                 server.variable = variable;
                 server.timestamp = timestamp;
-                server.data_signature = MySignature.signData(MySignature.getPrivateKey(server.id, -1d, this.server.cert_path), variable+timestamp);
-                server.last_echoed_values = new ArrayList<Pair<Integer, String>>();
+                server.data_signature = MySignature.signData(MySignature.getPrivateKey(server.id, -1, this.server.cert_path), variable+timestamp);
 
                 server.lock.unlock();
 
@@ -178,7 +177,7 @@ public class ServerHandler implements Runnable {
                     System.out.println("Recebido variable = " + variable + " e timestamp " + timestamp);
 
                 HashMap<String, Object> response = new HashMap<String, Object>();
-                response.put(Define.server_id, server.id.intValue());
+                response.put(Define.server_id, server.id);
                 response.put("plataform", Define.plataform);
                 response.put(Define.request_code, request.get(Define.request_code));
                 response.put(Define.status, Define.success);
@@ -195,7 +194,7 @@ public class ServerHandler implements Runnable {
                 server.lock.unlock();
 
                 HashMap<String, Object> response = new HashMap<String, Object>();
-                response.put(Define.server_id, server.id.intValue());
+                response.put(Define.server_id, server.id);
                 response.put("plataform", Define.plataform);
                 response.put(Define.request_code, request.get(Define.request_code));
                 response.put(Define.status, Define.error);
@@ -214,7 +213,7 @@ public class ServerHandler implements Runnable {
             server.lock.unlock();
 
             HashMap<String, Object> response = new HashMap<String, Object>();
-            response.put(Define.server_id, server.id.intValue());
+            response.put(Define.server_id, server.id);
             response.put("plataform", Define.plataform);
             response.put(Define.request_code, request.get(Define.request_code));
             response.put(Define.status, Define.error);
@@ -235,36 +234,27 @@ public class ServerHandler implements Runnable {
     Sends echo for timestamp and value
     param: request - A dictionary with client's request data.
     */
-    public boolean getEchoe(Map request) {
+    private boolean getEchoe(Map request) {
         String variable = (String)request.get(Define.variable);
         int timestamp = ((Double) request.get(Define.timestamp)).intValue();
 
         HashMap<String, Object> response = new HashMap<String, Object>();
-        if (timestamp < server.timestamp) {
-            response.put(Define.server_id, server.id.intValue());
-            response.put("plataform", Define.plataform);
-            response.put(Define.request_code, request.get(Define.request_code));
-            response.put(Define.status, Define.error);
-            response.put(Define.msg, Define.outdated_timestamp);
-        }
-        else if (!shouldEcho(variable, timestamp)) {
-            response.put(Define.server_id, server.id.intValue());
+        if (!shouldEcho(variable, timestamp, ((Double) request.get(Define.client_id)).intValue())) {
+            response.put(Define.server_id, server.id);
             response.put("plataform", Define.plataform);
             response.put(Define.request_code, request.get(Define.request_code));
             response.put(Define.status, Define.error);
             response.put(Define.msg, Define.timestamp_already_echoed);
         }
         else {
-            String data_signature = MySignature.signData(MySignature.getPrivateKey(server.id, -1d, this.server.cert_path), variable+timestamp);
+            String data_signature = MySignature.signData(MySignature.getPrivateKey(server.id, -1, this.server.cert_path), variable+timestamp);
 
-            server.lock.lock();
-            server.last_echoed_values.add(new Pair<Integer, String>(timestamp, variable));
-            server.lock.unlock();
+            this.addEchoe(((Double) request.get(Define.client_id)).intValue(), timestamp, variable);
 
             HashMap<String, Object> dataDict = new HashMap<String, Object>();
             dataDict.put(Define.data_signature, data_signature);
 
-            response.put(Define.server_id, server.id.intValue());
+            response.put(Define.server_id, server.id);
             response.put("plataform", Define.plataform);
             response.put(Define.request_code, request.get(Define.request_code));
             response.put(Define.status, Define.success);
@@ -285,20 +275,27 @@ public class ServerHandler implements Runnable {
     Check if value was echoed before
     param: value - Variable to sign.
     param: timestamp - Timestamp.
+    param: clientID - Client's ID.
     return: (bool) If server should echo value and timestamp
      */
-    public boolean shouldEcho(String value, int timestamp) {
+    private boolean shouldEcho(String value, int timestamp, int clientID) {
         server.lock.lock();
-        for (Pair<Integer, String> pair : server.last_echoed_values) {
-            if (pair.fst == timestamp && !pair.snd.equals(value)) {
-                server.lock.unlock();
-                return false;
-            }
-            else if (pair.fst == timestamp && pair.snd.equals(value)) {
-                server.lock.unlock();
-                return true;
+
+        if (this.server.echoed_values.containsKey(clientID)) {
+            List<Pair<Integer, String>> client_echoes = this.server.echoed_values.get(clientID);
+            for (Pair<Integer, String> pair : client_echoes) {
+                if (pair.fst == timestamp && !pair.snd.equals(value)) {
+                    server.lock.unlock();
+                    return false;
+                }
+                else if (pair.fst == timestamp && pair.snd.equals(value)) {
+                    server.lock.unlock();
+                    return true;
+                }
             }
         }
+
+
         server.lock.unlock();
         return true;
     }
@@ -312,10 +309,10 @@ public class ServerHandler implements Runnable {
     param: type - If is a write or write_back
     return: (bool) If echoes are valid
      */
-    public boolean isEchoValid(List<Pair<Double, String>> echoes, String value, int timestamp, String type) {
+    private boolean isEchoValid(List<Pair<Integer, String>> echoes, String value, int timestamp, String type) {
         int validEchoes = 0;
-        for (Pair<Double, String> echo: echoes) {
-            if (MySignature.verifySign(MySignature.getPublicKey(echo.fst, -1d, this.server.cert_path), echo.snd, value+timestamp))
+        for (Pair<Integer, String> echo: echoes) {
+            if (MySignature.verifySign(MySignature.getPublicKey(echo.fst, -1, this.server.cert_path), echo.snd, value+timestamp))
                 validEchoes++;
         }
 
@@ -324,5 +321,20 @@ public class ServerHandler implements Runnable {
         else //write_back
             return validEchoes >= server.faults + 1;
 
+    }
+
+    private void addEchoe(int clientID, int timestamp, String variable) {
+        server.lock.lock();
+
+        List<Pair<Integer, String>> echoes;
+        if (this.server.echoed_values.containsKey(clientID))
+            echoes = (List<Pair<Integer, String>>) this.server.echoed_values.get(clientID);
+        else  {
+            echoes = new ArrayList<Pair<Integer, String>>();
+            this.server.echoed_values.put(clientID, echoes);
+        }
+        echoes.add(new Pair<Integer, String>(timestamp, variable));
+
+        server.lock.unlock();
     }
 }

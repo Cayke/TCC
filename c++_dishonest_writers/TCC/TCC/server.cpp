@@ -39,7 +39,7 @@ namespace server{
     std::string DATA_SIGNATURE = "";
     int CLIENT_ID = -1;
     
-    std::vector<std::pair<int, std::string>> LAST_ECHOED_VALUES; //contem uma tupla (timestamp,value)
+    std::vector<std::pair<int, std::pair<int, std::string>>> ECHOED_VALUES; //contem uma tupla (client_id,(timestamp,value))
     
     std::mutex LOCK;
     
@@ -200,7 +200,6 @@ namespace server{
                 TIMESTAMP = timestamp;
                 DATA_SIGNATURE = signData(ID, variable + std::to_string(timestamp), CERT_PATH);
                 CLIENT_ID = client_id;
-                LAST_ECHOED_VALUES.clear();
                 LOCK.unlock();
                 
                 rapidjson::Document document;
@@ -322,21 +321,9 @@ namespace server{
     void getEchoe(rapidjson::Document *request, int socketTCP) {
         std::string variable = getStringWithKeyFromDocument(request, Define::variable);
         unsigned int timestamp = getUnsignedIntWithKeyFromDocument(request, Define::timestamp);
+        int client_id = getIntWithKeyFromDocument(request, Define::client_id);
         
-        if (timestamp < TIMESTAMP) {
-            rapidjson::Document document;
-            document.SetObject();
-            
-            addValueToDocument(&document, Define::server_id, ID);
-            addValueToDocument(&document, "plataform", Define::plataform);
-            addValueToDocument(&document, Define::request_code, getIntWithKeyFromDocument(request, Define::request_code));
-            addValueToDocument(&document, Define::status, Define::error);
-            addValueToDocument(&document, Define::msg, Define::outdated_timestamp);
-            
-            std::string responseJSON = getJSONStringForDocument(&document);
-            sendResponse(responseJSON, socketTCP);
-        }
-        else if (!shouldEcho(variable, timestamp)) {
+        if (!shouldEcho(variable, timestamp, client_id)) {
             rapidjson::Document document;
             document.SetObject();
             
@@ -351,7 +338,7 @@ namespace server{
         }
         else {
             LOCK.lock();
-            LAST_ECHOED_VALUES.push_back(std::make_pair(timestamp, variable));
+            ECHOED_VALUES.push_back(std::make_pair(client_id, std::make_pair(timestamp, variable)));
             LOCK.unlock();
             
             std::string data_signature = signData(ID, variable + std::to_string(timestamp), CERT_PATH);
@@ -382,17 +369,20 @@ namespace server{
     param: timestamp - Timestamp.
     return: (bool) If server should echo value and timestamp
     */
-    bool shouldEcho(std::string value, int timestamp) {
+    bool shouldEcho(std::string value, int timestamp, int client_id) {
         LOCK.lock();
-        for(std::vector<std::pair<int, std::string>>::const_iterator iterator = LAST_ECHOED_VALUES.begin() ; iterator < LAST_ECHOED_VALUES.end(); iterator ++) {
-            std::pair<int, std::string> tuple = *iterator;
-            if (tuple.first == TIMESTAMP && tuple.second != value) {
-                LOCK.unlock();
-                return false;
-            }
-            else if (tuple.first == TIMESTAMP && tuple.second == value){
-                LOCK.unlock();
-                return true;
+        for(std::vector<std::pair<int, std::pair<int, std::string>>>::const_iterator iterator = ECHOED_VALUES.begin() ; iterator < ECHOED_VALUES.end(); iterator ++) {
+            std::pair<int, std::pair<int, std::string>> tuple = *iterator;
+            if (tuple.first == client_id) {
+                std::pair<int, std::string> echoe = tuple.second;
+                if (echoe.first == TIMESTAMP && echoe.second != value) {
+                    LOCK.unlock();
+                    return false;
+                }
+                else if (echoe.first == TIMESTAMP && echoe.second == value){
+                    LOCK.unlock();
+                    return true;
+                }
             }
         }
         LOCK.unlock();

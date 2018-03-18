@@ -18,7 +18,7 @@ class Server(object):
     TIMESTAMP = -1
     CLIENT_ID = -1
 
-    LAST_ECHOED_VALUES = [] #contem uma tupla (timestamp,value)
+    ECHOED_VALUES = [] #contem uma tupla (timestamp,value,client_id)
 
     LOCK = threading.Lock()
 
@@ -136,7 +136,6 @@ class Server(object):
                 self.VARIABLE = variable
                 self.TIMESTAMP = timestamp
                 self.DATA_SIGNATURE = Signature.signData(Signature.getPrivateKey(self.ID, -1, self.CERT_PATH), variable + str(timestamp))
-                self.LAST_ECHOED_VALUES = []
 
                 self.LOCK.release()
 
@@ -212,11 +211,7 @@ class Server(object):
         variable = request[Define.variable]
         timestamp = request[Define.timestamp]
 
-        if timestamp < self.TIMESTAMP:
-            response = dict(server_id=self.ID, plataform=Define.plataform, request_code=request[Define.request_code], status=Define.error, msg=Define.outdated_timestamp)
-            responseJSON = json.dumps(response)
-
-        elif not self.shouldEcho(variable, timestamp):
+        if not self.shouldEcho(variable, timestamp, request[Define.client_id]):
             response = dict(server_id=self.ID, plataform=Define.plataform, request_code=request[Define.request_code], status=Define.error, msg=Define.timestamp_already_echoed)
             responseJSON = json.dumps(response)
 
@@ -224,7 +219,7 @@ class Server(object):
             data_signature = Signature.signData(Signature.getPrivateKey(self.ID, -1, self.CERT_PATH), variable + str(timestamp))
 
             with self.LOCK:
-                self.LAST_ECHOED_VALUES.append((timestamp, variable))
+                self.ECHOED_VALUES.append((timestamp, variable, request[Define.client_id]))
 
             dataDict = dict(data_signature = data_signature)
             response = dict(server_id = self.ID, plataform = Define.plataform, request_code = request[Define.request_code], status = Define.success, msg = Define.get_echoe, data = dataDict)
@@ -239,15 +234,17 @@ class Server(object):
     Check if value was echoed before
     param: value - Variable to sign.
     param: timestamp - Timestamp.
+    param: clientID - Client's ID.
     return: (bool) If server should echo value and timestamp
     '''
-    def shouldEcho(self, value, timestamp):
+    def shouldEcho(self, value, timestamp, clientID):
         with self.LOCK:
-            for (auxTimestamp, auxValue) in self.LAST_ECHOED_VALUES:
-                if timestamp == auxTimestamp and value != auxValue:
-                    return False
-                elif timestamp == auxTimestamp and value == auxValue:
-                    return True
+            for (auxTimestamp, auxValue, auxClientID) in self.ECHOED_VALUES:
+                if clientID == auxClientID:
+                    if timestamp == auxTimestamp and value != auxValue:
+                        return False
+                    elif timestamp == auxTimestamp and value == auxValue:
+                        return True
 
             return True
 

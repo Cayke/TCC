@@ -23,7 +23,7 @@ class Server: NSObject {
     
     var LOCK = pthread_mutex_t();
     
-    var LAST_ECHOED_VALUES : Array<(Int, String)> = []
+    var ECHOED_VALUES : Array<(Int, Int, String)> = []
     
     var VERBOSE = 0;
     var CERT_PATH = "";
@@ -178,8 +178,6 @@ class Server: NSObject {
                     self.DATA_SIGNATURE = String(cString: data_signature)
                 }
                 
-                self.LAST_ECHOED_VALUES = []
-                
                 pthread_mutex_unlock(&self.LOCK)
                 
                 print ("Recebido variable = \(variable) e timestamp = \(timestamp)")
@@ -227,17 +225,9 @@ class Server: NSObject {
     func getEchoe(request: Dictionary<String, Any>, clientSocket: TCPClient) {
         let variable : String = request[Define.variable] as! String
         let timestamp : Int = request[Define.timestamp] as! Int
+        let clientID : Int = request[Define.client_id] as! Int
         
-        if timestamp < self.TIMESTAMP {
-            let response :JSON = [Define.server_id: JSON(self.ID),
-                                  "plataform": JSON(Define.plataform),
-                                  Define.request_code: JSON(request[Define.request_code] as! Int),
-                                  Define.status: JSON(Define.error),
-                                  Define.msg: JSON(Define.outdated_timestamp)]
-            
-            sendResponse(response: response, clientSocket: clientSocket)
-        }
-        else if !shouldEcho(variable: variable, timestamp: timestamp) {
+        if !shouldEcho(variable: variable, timestamp: timestamp, client_id: clientID) {
             let response :JSON = [Define.server_id: JSON(self.ID),
                                   "plataform": JSON(Define.plataform),
                                   Define.request_code: JSON(request[Define.request_code] as! Int),
@@ -248,7 +238,7 @@ class Server: NSObject {
         }
         else {
             pthread_mutex_lock(&self.LOCK)
-            self.LAST_ECHOED_VALUES.append((timestamp, variable))
+            self.ECHOED_VALUES.append((clientID, timestamp, variable))
             pthread_mutex_unlock(&self.LOCK)
             
             let message = variable + String(timestamp)
@@ -285,16 +275,18 @@ class Server: NSObject {
      param: timestamp - Timestamp.
      return: (bool) If server should echo value and timestamp
      */
-    func shouldEcho(variable: String, timestamp : Int) -> Bool {
+    func shouldEcho(variable: String, timestamp : Int, client_id : Int) -> Bool {
         pthread_mutex_lock(&self.LOCK)
-        for (time, value) in self.LAST_ECHOED_VALUES {
-            if time == timestamp && !(value == variable) {
-                pthread_mutex_unlock(&self.LOCK)
-                return false;
-            }
-            else if time == timestamp && value == variable {
-                pthread_mutex_unlock(&self.LOCK)
-                return true;
+        for (clientID, time, value) in self.ECHOED_VALUES {
+            if clientID == client_id {
+                if time == timestamp && !(value == variable) {
+                    pthread_mutex_unlock(&self.LOCK)
+                    return false;
+                }
+                else if time == timestamp && value == variable {
+                    pthread_mutex_unlock(&self.LOCK)
+                    return true;
+                }
             }
         }
         pthread_mutex_unlock(&self.LOCK)

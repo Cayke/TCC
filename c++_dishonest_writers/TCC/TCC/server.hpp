@@ -23,7 +23,7 @@ namespace server{
     void readTimestamp(rapidjson::Document *request, int socketTCP);
     void sendResponse(std::string responseJSON, int socketTCP);
     void getEchoe(rapidjson::Document *request, int socketTCP);
-    bool shouldEcho(std::string value, int timestamp);
+    bool shouldEcho(std::string value, int timestamp, int client_id);
     bool isEchoValid(std::vector<std::pair<int, std::string>> echoes, std::string value, int timestamp, std::string type);
 }
 #endif /* server_hpp */
