@@ -20,7 +20,7 @@ public class ClientHandler implements Runnable {
         write, read, readTimestamp
     }
 
-    private Client client;
+    private RobotClient client;
     private Function function;
     private ResponseData data;
 
@@ -28,7 +28,7 @@ public class ClientHandler implements Runnable {
     Client's  messages handler constructor.
     param: server - Client main class
     */
-    public ClientHandler(Client client, Function function, ResponseData data) {
+    public ClientHandler(RobotClient client, Function function, ResponseData data) {
         this.client = client;
         this.function = function;
         this.data = data;

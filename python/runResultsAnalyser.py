@@ -19,7 +19,7 @@ def getInfoFromClients(path):
             file.readline() # ignore header
             file_content = file.readline()
 
-            data = file_content.split(';')
+            data = file_content.split('|')
 
             operations +=  int(data[0])
             average_sum += float(data[1])

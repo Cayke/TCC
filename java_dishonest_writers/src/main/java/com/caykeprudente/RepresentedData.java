@@ -6,6 +6,7 @@ import com.google.gson.JsonParser;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.Scanner;
 
 /**
@@ -60,6 +61,34 @@ public class RepresentedData {
 
         System.out.println("Digite sua idade:");
         age = scanner.nextInt();
+
+        Map<String, Object> data = new HashMap<String, Object>();
+        data.put( "name", name);
+        data.put( "age", age );
+        data.put( "carrer", carrer );
+
+        return new Gson().toJson(data);
+    }
+
+    /*
+    Generates fake data with defined size
+    param: size - Data size in bytes
+    return: (string) Data
+     */
+    public static String getFakeData(int size) {
+        // 65 bytes is the json message overhead with age 24 and name cayke
+        String name = "Cayke";
+        int age = 24;
+        String carrer = "";
+
+        final String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        final int N = alphabet.length();
+
+        Random r = new Random();
+
+        for (int i = 0; i < size-65; i++) {
+            carrer = carrer + (alphabet.charAt(r.nextInt(N)));
+        }
 
         Map<String, Object> data = new HashMap<String, Object>();
         data.put( "name", name);
