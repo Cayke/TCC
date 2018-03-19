@@ -112,9 +112,9 @@ public class Client {
 
         for (Pair<String, Integer> server : servers) {
             ResponseData data = new ResponseData(value, timestamp, dataSignature, id, request_code, server);
-            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write, data);
-            Thread thread = new Thread(handler);
-            thread.start();
+//            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write, data);
+//            Thread thread = new Thread(handler);
+//            thread.start();
         }
 
         request_code++;
@@ -136,9 +136,9 @@ public class Client {
 
         for (Pair<String, Integer> server : servers) {
             ResponseData data = new ResponseData(null, 0, null, id, request_code, server);
-            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.readTimestamp, data);
-            Thread thread = new Thread(handler);
-            thread.start();
+//            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.readTimestamp, data);
+//            Thread thread = new Thread(handler);
+//            thread.start();
         }
 
         try {
@@ -190,9 +190,9 @@ public class Client {
 
         for (Pair<String, Integer> server : servers) {
             ResponseData data = new ResponseData(null, 0, null, id, request_code, server);
-            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.read, data);
-            Thread thread = new Thread(handler);
-            thread.start();
+//            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.read, data);
+//            Thread thread = new Thread(handler);
+//            thread.start();
         }
 
         try {
@@ -241,9 +241,9 @@ public class Client {
                 data.server = server;
                 data.request_code = request_code;
 
-                ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write, data);
-                Thread thread = new Thread(handler);
-                thread.start();
+//                ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write, data);
+//                Thread thread = new Thread(handler);
+//                thread.start();
             }
         }
         request_code++;

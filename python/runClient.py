@@ -6,8 +6,8 @@ DEBUG = True
 
 if DEBUG:
     servers = [('localhost', 5000), ('localhost', 5001), ('localhost', 5002), ('localhost', 5003)]
-    Client(1, servers, 2, '/OneDrive/unb/TCC/git/certs/')
-    # RobotClient(1, servers, 1, '/OneDrive/unb/TCC/git/certs/', 250, 'read', '/OneDrive/unb/TCC/git/results/')
+    # Client(1, servers, 2, '/OneDrive/unb/TCC/git/certs/')
+    RobotClient(1, servers, 1, '/OneDrive/unb/TCC/git/certs/', 100, 'write', '/OneDrive/unb/TCC/git/results/')
 
 else:
     if len(sys.argv) < 13:

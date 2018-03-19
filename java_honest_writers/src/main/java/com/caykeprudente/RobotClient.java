@@ -59,7 +59,7 @@ public class RobotClient {
 
         System.out.println("Client " + Define.plataform + " " + id + "running....");
 
-//        initUserInterface();
+        //initUserInterface();
         makeRequests(repeat_operations, operation);
     }
 
@@ -70,15 +70,15 @@ public class RobotClient {
      */
     private void makeRequests(int n, String type) {
         this.number_of_executions = n;
-        this.init_time = new Date().getTime();
+        this.init_time = System.currentTimeMillis();
 
         int i = 0;
         if (type.equals("read")) {
             while (i < n) {
-                long init_time = new Date().getTime();
+                long init_time = System.currentTimeMillis();
                 this.read();
-                long final_time = new Date().getTime();
-                this.operation_timers.add(Double.valueOf(final_time-init_time));
+                long final_time = System.currentTimeMillis();
+                this.operation_timers.add((final_time-init_time)/1000.0); //save seconds in array
                 i++;
             }
             this.final_time = new Date().getTime();
@@ -87,14 +87,14 @@ public class RobotClient {
         }
         else if (type.equals("write")) {
             while (i < n) {
-                long init_time = new Date().getTime();
+                long init_time = System.currentTimeMillis();
                 String data = RepresentedData.getFakeData(200);
                 this.write(data);
-                long final_time = new Date().getTime();
-                this.operation_timers.add(Double.valueOf(final_time-init_time));
+                long final_time = System.currentTimeMillis();
+                this.operation_timers.add((final_time-init_time)/1000.0); //save seconds in array
                 i++;
             }
-            this.final_time = new Date().getTime();
+            this.final_time = System.currentTimeMillis();
 
             this.writeExecutionInfo(this.results_path + "client_" + this.id + "_write.txt");
         }
@@ -109,7 +109,7 @@ public class RobotClient {
         try {
             PrintWriter writer = new PrintWriter(path, "UTF-8");
             writer.println(Define.execution_file_header);
-            writer.println(this.number_of_executions + "|" + getAverageOperationTime() + "|" + this.init_time + "|" + this.final_time);
+            writer.println(this.number_of_executions + "|" + getAverageOperationTime() + "|" + this.init_time/1000.0 + "|" + this.final_time/1000.0);
             writer.close();
         }
         catch (Exception e) {
@@ -121,8 +121,8 @@ public class RobotClient {
     Calculates average time for operations
     return: (float) average_time - Avarage time for operations
      */
-    private long getAverageOperationTime(){
-        long count = 0;
+    private Double getAverageOperationTime(){
+        Double count = 0d;
 
         for (Double time : this.operation_timers)
             count += time;

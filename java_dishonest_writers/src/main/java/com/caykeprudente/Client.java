@@ -121,9 +121,9 @@ public class Client {
         if (echoes != null) {
             for (Pair<String, Integer> server : servers) {
                 ResponseData data = new ResponseData(value, timestamp, null, -1, request_code, server, echoes);
-                ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write, data);
-                Thread thread = new Thread(handler);
-                thread.start();
+//                ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write, data);
+//                Thread thread = new Thread(handler);
+//                thread.start();
             }
 
             request_code++;
@@ -154,9 +154,9 @@ public class Client {
 
         for (Pair<String, Integer> server : servers) {
             ResponseData data = new ResponseData(null, 0, null, 0, request_code, server, null);
-            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.readTimestamp, data);
-            Thread thread = new Thread(handler);
-            thread.start();
+//            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.readTimestamp, data);
+//            Thread thread = new Thread(handler);
+//            thread.start();
         }
 
         try {
@@ -210,9 +210,9 @@ public class Client {
 
         for (Pair<String, Integer> server : servers) {
             ResponseData data = new ResponseData(null, 0, null, -1, request_code, server, null);
-            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.read, data);
-            Thread thread = new Thread(handler);
-            thread.start();
+//            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.read, data);
+//            Thread thread = new Thread(handler);
+//            thread.start();
         }
 
         try {
@@ -268,9 +268,9 @@ public class Client {
             if (responseValidator.timestamp != -1) {
                 int timestamp = responseValidator.timestamp;
                 ResponseData data = new ResponseData(responseValidator.value, timestamp, null, -1, request_code, server, responseValidator.echoes);
-                ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write_back, data);
-                Thread thread = new Thread(handler);
-                thread.start();
+//                ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write_back, data);
+//                Thread thread = new Thread(handler);
+//                thread.start();
             }
         }
         request_code++;
@@ -294,9 +294,9 @@ public class Client {
 
         for (Pair<String, Integer> server : servers) {
             ResponseData data = new ResponseData(value, timestamp, null, -1, request_code, server, null);
-            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.readEchoeFromServer, data);
-            Thread thread = new Thread(handler);
-            thread.start();
+//            ClientHandler handler = new ClientHandler(this, ClientHandler.Function.readEchoeFromServer, data);
+//            Thread thread = new Thread(handler);
+//            thread.start();
         }
 
         try {

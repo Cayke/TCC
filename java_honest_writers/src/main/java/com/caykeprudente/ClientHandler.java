@@ -131,13 +131,13 @@ public class ClientHandler implements Runnable {
         }
 
         String status = (String) messageFromServer.get(Define.status);
-        Double request_code = (Double) messageFromServer.get(Define.request_code);
+        int request_code = ((Double) messageFromServer.get(Define.request_code)).intValue();
 
-        if (!request_code.equals(data.request_code)) {
+        if (request_code != data.request_code) {
             if (this.client.verbose > 0)
                 System.out.println("Response atrasada");
         }
-        else if (status.equals(Define.success) && request_code.equals(data.request_code)) {
+        else if (status.equals(Define.success)) {
             LinkedTreeMap<String, Object> dataDict = (LinkedTreeMap<String, Object>) messageFromServer.get(Define.data);
             ResponseData responseData = new ResponseData(dataDict, data.server);
 
@@ -191,9 +191,13 @@ public class ClientHandler implements Runnable {
         }
 
         String status = (String) messageFromServer.get(Define.status);
-        Double request_code = (Double) messageFromServer.get(Define.request_code);
+        int request_code = ((Double) messageFromServer.get(Define.request_code)).intValue();
 
-        if (status.equals(Define.success) && request_code.equals(data.request_code)) {
+        if (request_code != data.request_code) {
+            if (this.client.verbose > 0)
+                System.out.println("Response atrasada");
+        }
+        else if (status.equals(Define.success)) {
             LinkedTreeMap<String, Object> dataDict = (LinkedTreeMap<String, Object>) messageFromServer.get(Define.data);
             ResponseData responseData = new ResponseData(dataDict, data.server);
 
@@ -214,10 +218,6 @@ public class ClientHandler implements Runnable {
         else if (status.equals(Define.error)) {
             if (this.client.verbose > 0)
                 System.out.println("Ocorreu algum erro na request");
-        }
-        else if (!request_code.equals(data.request_code)) {
-            if (this.client.verbose > 0)
-                System.out.println("Response atrasada");
         }
     }
 }

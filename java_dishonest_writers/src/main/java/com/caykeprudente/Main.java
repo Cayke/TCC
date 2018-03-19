@@ -58,7 +58,7 @@ public class Main {
             servers.add(new Pair<String, Integer>("localhost", 5003));
             try {
                 VERBOSE = 2;
-                new Client(0, servers, 2, "/OneDrive/unb/TCC/git/certs/");
+                new RobotClient(0, servers, 2, "/OneDrive/unb/TCC/git/certs/", 100, "write", "/OneDrive/unb/TCC/git/results/");
             } catch (Exception e) {
                 System.out.println("Deu ruim no client: " + e.toString());
             }

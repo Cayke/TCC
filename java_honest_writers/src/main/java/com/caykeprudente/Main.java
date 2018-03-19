@@ -18,7 +18,7 @@ public class Main {
 
     private static void runServer(String[] args) {
         if (DEBUG) {
-            int id = 2;
+            int id = 4;
             Server server = new Server(id, "localhost", 5000 + id, 2);
             VERBOSE = 2;
             try {
@@ -60,7 +60,7 @@ public class Main {
             servers.add(new Pair<String, Integer>("localhost", 5003));
             try {
                 VERBOSE = 2;
-                new Client(0, servers, 2, "/OneDrive/unb/TCC/git/certs/");
+                new RobotClient(0, servers, 2, "/OneDrive/unb/TCC/git/certs/", 100, "write", "/OneDrive/unb/TCC/git/results/");
             } catch (Exception e) {
                 System.out.println("Deu ruim no client: " + e.toString());
             }
