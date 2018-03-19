@@ -12,14 +12,14 @@ public class Main {
 
     public static void main(String[] args) {
         // write your code here
-        //runClient(args);
-        runServer(args);
+        runClient(args);
+        //runServer(args);
     }
 
     private static void runServer(String[] args) {
         if (DEBUG) {
             int id = 3;
-            Server server = new Server(id, "localhost", 5000 + id, 2, "/OneDrive/unb/TCC/DEV/certs/");
+            Server server = new Server(id, "localhost", 5000 + id, 2, "/OneDrive/unb/TCC/git/certs/");
             VERBOSE = 2;
             try {
                 server.waitForConnection();
@@ -52,13 +52,13 @@ public class Main {
     private static void runClient(String[] args) {
         if (DEBUG) {
             List<Pair<String, Integer>> servers = new ArrayList<Pair<String, Integer>>();
-            servers.add(new Pair<String, Integer>("192.168.0.199", 5000));
-            servers.add(new Pair<String, Integer>("192.168.0.199", 5001));
-            servers.add(new Pair<String, Integer>("192.168.0.199", 5002));
-            servers.add(new Pair<String, Integer>("192.168.0.199", 5003));
+            servers.add(new Pair<String, Integer>("localhost", 5000));
+            servers.add(new Pair<String, Integer>("localhost", 5001));
+            servers.add(new Pair<String, Integer>("localhost", 5002));
+            servers.add(new Pair<String, Integer>("localhost", 5003));
             try {
                 VERBOSE = 2;
-                new Client(0, servers, 2, "/OneDrive/unb/TCC/DEV/certs/");
+                new Client(0, servers, 2, "/OneDrive/unb/TCC/git/certs/");
             } catch (Exception e) {
                 System.out.println("Deu ruim no client: " + e.toString());
             }

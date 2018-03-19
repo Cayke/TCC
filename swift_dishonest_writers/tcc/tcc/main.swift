@@ -11,7 +11,8 @@ import Foundation
 let debug = true
 
 if debug {
-    Server(id: 1, ip: "127.0.0.1", port: 5001, verbose: 2, cert_path: "/OneDrive/unb/TCC/DEV/certs/").waitForConnection();
+    let id = 1
+    Server(id: id, ip: "127.0.0.1", port: 5000 + id, verbose: 2, cert_path: "/OneDrive/unb/TCC/git/certs/").waitForConnection();
 }
 else {
     let arguments = CommandLine.arguments

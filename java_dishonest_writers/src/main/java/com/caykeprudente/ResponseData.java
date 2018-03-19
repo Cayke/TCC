@@ -41,11 +41,18 @@ public class ResponseData {
 
     public ResponseData(LinkedTreeMap<String, Object> dictionary, Pair<String, Integer> server) {
         LinkedTreeMap<String, Object> dataDict = (LinkedTreeMap<String, Object>) dictionary.get(Define.data);
-        timestamp = ((Double) dataDict.get(Define.timestamp)).intValue();
+
+        Double timestamp = (Double) dataDict.get(Define.timestamp);
+        if (timestamp != null)
+            this.timestamp = timestamp.intValue();
         value = (String) dataDict.get(Define.variable);
         data_signature = (String) dataDict.get(Define.data_signature);
 
-        server_id = ((Double) dictionary.get(Define.server_id)).intValue();
+
+        Double server_id = (Double) dictionary.get(Define.server_id);
+        if (server_id != null)
+            this.server_id = server_id.intValue();
+
         this.server = server;
     }
 }

@@ -433,10 +433,6 @@ class RobotClient ():
             if self.VERBOSE > 0:
                 print("Ocorreu algum erro na request")
 
-        elif messageFromServer[Define.request_code] != self.REQUEST_CODE:
-            if self.VERBOSE > 0:
-                print("Response atrasada.")
-
 
     '''
     Gets the timestamp from a server and append in the responses array if possible

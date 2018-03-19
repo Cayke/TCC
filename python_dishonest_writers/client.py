@@ -186,7 +186,7 @@ class Client ():
             if self.TIMESTAMP_ALREADY_ECHOED_BY_ANY_SERVER:
                 increment = math.pow(2, self.TIMESTAMP_ALREADY_ECHOED_POWER)
                 self.TIMESTAMP_ALREADY_ECHOED_POWER = self.TIMESTAMP_ALREADY_ECHOED_POWER + 1
-                return self.getEchoes(value, timestamp + increment)
+                return self.getEchoes(value, int(timestamp + increment))
 
 
             elif (len(self.ECHOES) >= self.QUORUM):
@@ -329,7 +329,11 @@ class Client ():
     def readFromServer(self, server, request_code):
         messageFromServer = self.getValueFromServer(server, request_code)
 
-        if messageFromServer[Define.status] == Define.success and messageFromServer[Define.request_code] == self.REQUEST_CODE:
+        if messageFromServer[Define.request_code] != self.REQUEST_CODE:
+            if self.VERBOSE > 0:
+                print("Response atrasada.")
+
+        elif messageFromServer[Define.status] == Define.success:
             data = messageFromServer[Define.data]
             serverTimestamp = data[Define.timestamp]
             serverVariable = data[Define.variable]
@@ -353,10 +357,6 @@ class Client ():
             if self.VERBOSE > 0:
                 print("Ocorreu algum erro na request")
 
-        elif messageFromServer[Define.request_code] != self.REQUEST_CODE:
-            if self.VERBOSE > 0:
-                print("Response atrasada.")
-
 
     '''
     Gets the timestamp from a server and append in the responses array if possible
@@ -366,7 +366,11 @@ class Client ():
     def readTimestampFromServer(self, server, request_code):
         messageFromServer = self.getTimestampFromServer(server, request_code)
 
-        if messageFromServer[Define.status] == Define.success and messageFromServer[Define.request_code] == self.REQUEST_CODE:
+        if messageFromServer[Define.request_code] != self.REQUEST_CODE:
+            if self.VERBOSE > 0:
+                print("Response atrasada.")
+
+        elif messageFromServer[Define.status] == Define.success:
             data = messageFromServer[Define.data]
             serverTimestamp = data[Define.timestamp]
 
@@ -387,10 +391,6 @@ class Client ():
             if self.VERBOSE > 0:
                 print("Ocorreu algum erro na request")
 
-        elif messageFromServer[Define.request_code] != self.REQUEST_CODE:
-            if self.VERBOSE > 0:
-                print("Response atrasada.")
-
     '''
     Gets the echoe from a server and append in the echoes array if possible
     param: server - Server to send the request
@@ -399,7 +399,11 @@ class Client ():
     def readEchoeFromServer(self, server, request_code, value, timestamp):
         messageFromServer = self.getEchoeFromServer(server, request_code, value, timestamp)
 
-        if messageFromServer[Define.status] == Define.success and messageFromServer[Define.request_code] == self.REQUEST_CODE:
+        if messageFromServer[Define.request_code] != self.REQUEST_CODE:
+            if self.VERBOSE > 0:
+                print("Response atrasada.")
+
+        elif messageFromServer[Define.status] == Define.success:
             data = messageFromServer[Define.data]
             data_signature = data[Define.data_signature]
             server_id = messageFromServer[Define.server_id]
@@ -438,10 +442,6 @@ class Client ():
         elif messageFromServer[Define.status] == Define.error:
             if self.VERBOSE > 0:
                 print("Ocorreu algum erro na request")
-
-        elif messageFromServer[Define.request_code] != self.REQUEST_CODE:
-            if self.VERBOSE > 0:
-                print("Response atrasada.")
 
 
     '''

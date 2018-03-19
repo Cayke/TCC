@@ -157,9 +157,13 @@ public class ClientHandler implements Runnable {
         }
 
         String status = (String) messageFromServer.get(Define.status);
-        Double request_code = (Double) messageFromServer.get(Define.request_code);
+        int request_code = ((Double) messageFromServer.get(Define.request_code)).intValue();
 
-        if (status.equals(Define.success) && request_code.equals(data.request_code)) {
+        if (request_code != data.request_code) {
+            if (this.client.verbose > 0)
+                System.out.println("Response atrasada");
+        }
+        else if (status.equals(Define.success)) {
             ResponseData responseData = new ResponseData(messageFromServer, data.server);
 
             client.lock.lock();
@@ -180,11 +184,6 @@ public class ClientHandler implements Runnable {
         else if (status.equals(Define.error)) {
             if (this.client.verbose > 0)
                 System.out.println("Ocorreu algum erro na request");
-            
-        }
-        else if (!request_code.equals(data.request_code)) {
-            if (this.client.verbose > 0)
-                System.out.println("Response atrasada");
             
         }
     }
@@ -220,9 +219,13 @@ public class ClientHandler implements Runnable {
         }
 
         String status = (String) messageFromServer.get(Define.status);
-        Double request_code = (Double) messageFromServer.get(Define.request_code);
+        int request_code = ((Double) messageFromServer.get(Define.request_code)).intValue();
 
-        if (status.equals(Define.success) && request_code.equals(data.request_code)) {
+        if (request_code != data.request_code) {
+            if (this.client.verbose > 0)
+                System.out.println("Response atrasada");
+        }
+        else if (status.equals(Define.success)) {
             ResponseData responseData = new ResponseData(messageFromServer, data.server);
 
             client.lock.lock();
@@ -243,11 +246,6 @@ public class ClientHandler implements Runnable {
         else if (status.equals(Define.error)) {
             if (this.client.verbose > 0)
                 System.out.println("Ocorreu algum erro na request");
-            
-        }
-        else if (!request_code.equals(data.request_code)) {
-            if (this.client.verbose > 0)
-                System.out.println("Response atrasada");
             
         }
     }
@@ -286,10 +284,14 @@ public class ClientHandler implements Runnable {
         }
 
         String status = (String) messageFromServer.get(Define.status);
-        Double request_code = (Double) messageFromServer.get(Define.request_code);
+        int request_code = ((Double) messageFromServer.get(Define.request_code)).intValue();
         String msg = (String) messageFromServer.get(Define.msg);
 
-        if (status.equals(Define.success) && request_code.equals(data.request_code)) {
+        if (request_code!=data.request_code) {
+            if (this.client.verbose > 0)
+                System.out.println("Response atrasada");
+        }
+        else if (status.equals(Define.success)) {
             ResponseData responseData = new ResponseData(messageFromServer, data.server);
 
             client.lock.lock();
@@ -311,12 +313,12 @@ public class ClientHandler implements Runnable {
             client.lock.lock();
             client.timestamp_already_echoed_by_any_server = true;
 
-            Double server_id = (Double) messageFromServer.get(Define.server_id);
+            int server_id = ((Double) messageFromServer.get(Define.server_id)).intValue();
             if (client.echoes.size() < client.quorum - 1) {
-                client.echoes.add(new Pair<Integer, String>(server_id.intValue(), ""));
+                client.echoes.add(new Pair<Integer, String>(server_id, ""));
             }
             else if (client.echoes.size() == client.quorum - 1) {
-                client.echoes.add(new Pair<Integer, String>(server_id.intValue(), ""));
+                client.echoes.add(new Pair<Integer, String>(server_id, ""));
                 client.semaphore.release();
             }
             else {
@@ -329,11 +331,6 @@ public class ClientHandler implements Runnable {
         else if (status.equals(Define.error)) {
             if (this.client.verbose > 0)
                 System.out.println("Ocorreu algum erro na request");
-            
-        }
-        else if (!request_code.equals(data.request_code)) {
-            if (this.client.verbose > 0)
-                System.out.println("Response atrasada");
             
         }
     }

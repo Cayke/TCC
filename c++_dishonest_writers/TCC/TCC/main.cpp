@@ -11,12 +11,12 @@
 #include <string>
 #include "signature.hpp"
 
-bool debug = false;
+bool debug = true;
 
 int main(int argc, const char * argv[]) {
     if (debug) {
         int id = 0;
-        server::init(id, "localhost", 5000 + id, 2, "/OneDrive/unb/TCC/DEV/certs/");
+        server::init(id, "localhost", 5000 + id, 2, "/OneDrive/unb/TCC/git/certs/");
     }
     else {
         if (argc < 5) {

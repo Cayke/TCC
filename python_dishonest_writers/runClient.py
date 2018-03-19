@@ -6,7 +6,7 @@ DEBUG = True
 
 if DEBUG:
     servers = [('localhost', 5000), ('localhost', 5001), ('localhost', 5002), ('localhost', 5003)]
-    Client(1, servers, 2, '/OneDrive/unb/TCC/git/certs/')
+    Client(0, servers, 2, '/OneDrive/unb/TCC/git/certs/')
     # RobotClient(1, servers, 2, '/OneDrive/unb/TCC/git/certs/', 250, 'read', '/OneDrive/unb/TCC/git/results/')
 
 else:

@@ -238,7 +238,11 @@ class Client ():
     def readFromServer(self, server, request_code):
         messageFromServer = self.getValueFromServer(server, request_code)
 
-        if messageFromServer[Define.status] == Define.success and messageFromServer[Define.request_code] == self.REQUEST_CODE:
+        if messageFromServer[Define.request_code] != self.REQUEST_CODE:
+            if self.VERBOSE > 0:
+                print("Response atrasada.")
+
+        elif messageFromServer[Define.status] == Define.success:
             data = messageFromServer[Define.data]
             serverTimestamp = data[Define.timestamp]
             serverVariable = data[Define.variable]
@@ -262,9 +266,6 @@ class Client ():
             if self.VERBOSE > 0:
                 print("Ocorreu algum erro na request")
 
-        elif messageFromServer[Define.request_code] != self.REQUEST_CODE:
-            if self.VERBOSE > 0:
-                print("Response atrasada.")
 
 
     '''
@@ -275,7 +276,11 @@ class Client ():
     def readTimestampFromServer(self, server, request_code):
         messageFromServer = self.getTimestampFromServer(server, request_code)
 
-        if messageFromServer[Define.status] == Define.success and messageFromServer[Define.request_code] == self.REQUEST_CODE:
+        if messageFromServer[Define.request_code] != self.REQUEST_CODE:
+            if self.VERBOSE > 0:
+                print("Response atrasada.")
+
+        elif messageFromServer[Define.status] == Define.success:
             data = messageFromServer[Define.data]
             serverTimestamp = data[Define.timestamp]
 
@@ -295,10 +300,6 @@ class Client ():
         elif messageFromServer[Define.status] == Define.error:
             if self.VERBOSE > 0:
                 print("Ocorreu algum erro na request")
-
-        elif messageFromServer[Define.request_code] != self.REQUEST_CODE:
-            if self.VERBOSE > 0:
-                print("Response atrasada.")
 
 
     '''
