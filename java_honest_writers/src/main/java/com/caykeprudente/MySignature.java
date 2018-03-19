@@ -23,14 +23,14 @@ public class MySignature {
     param: filePath - Path for certs folder
     return: (String) The private certificate.
     */
-    public static String getPrivateKey(Double server, Double client, String filePath) {
+    public static String getPrivateKey(int server, int client, String filePath) {
         //no java o certificado privado tem que estar no formato pcks8, e o gerado no site e pcks1, executar o comando abaixo para poder usar o cert aqui
         //openssl pkcs8 -topk8 -inform PEM -outform PEM -in client0_private.pem -out client0_private_pcks8.pem -nocrypt
 
          if (server != -1)
-            filePath = filePath + "server" + server.intValue() + "_private_pcks8.pem";
+            filePath = filePath + "server" + server + "_private_pcks8.pem";
         else
-            filePath = filePath + "client" + client.intValue() + "_private_pcks8.pem";
+            filePath = filePath + "client" + client + "_private_pcks8.pem";
 
         try {
             FileInputStream inputStream = new FileInputStream(filePath);
@@ -51,11 +51,11 @@ public class MySignature {
     param: filePath - Path for certs folder
     return: (String) The public certificate.
     */
-    public static String getPublicKey(Double server, Double client, String filePath) {
+    public static String getPublicKey(int server, int client, String filePath) {
         if (server != -1)
-            filePath = filePath + "server" + server.intValue() + "_public.pem";
+            filePath = filePath + "server" + server + "_public.pem";
         else
-            filePath = filePath +"client" + client.intValue() + "_public.pem";
+            filePath = filePath +"client" + client + "_public.pem";
 
         try {
             FileInputStream inputStream = new FileInputStream(filePath);

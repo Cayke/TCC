@@ -60,7 +60,7 @@ public class Main {
             servers.add(new Pair<String, Integer>("localhost", 5003));
             try {
                 VERBOSE = 2;
-                new Client(0d, servers, 2, "/OneDrive/unb/TCC/git/certs/");
+                new Client(0, servers, 2, "/OneDrive/unb/TCC/git/certs/");
             } catch (Exception e) {
                 System.out.println("Deu ruim no client: " + e.toString());
             }
@@ -74,7 +74,7 @@ public class Main {
                 System.out.println(args.toString());
             }
 
-            Double id = Double.valueOf(args[0]);
+            int id = Double.valueOf(args[0]).intValue();
             int verbose = Integer.parseInt(args[1]);
             VERBOSE = verbose;
             String cert_path = args[2];

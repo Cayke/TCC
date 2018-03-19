@@ -61,10 +61,10 @@ public class ClientHandler implements Runnable {
     private void writeOnServer() {
         Map<String, Object> request = new HashMap<String, Object>();
         request.put( "type", Define.write);
-        request.put( "timestamp", data.timestamp.intValue());
+        request.put( "timestamp", data.timestamp);
         request.put( "variable", data.value);
-        request.put( "request_code", data.request_code.intValue());
-        request.put( "client_id", data.client_id.intValue());
+        request.put( "request_code", data.request_code);
+        request.put( "client_id", data.client_id);
         request.put( "data_signature", data.data_signature);
 
         Socket clientSocket = null;
@@ -109,8 +109,8 @@ public class ClientHandler implements Runnable {
     private void readFromServer() {
         Map<String, Object> request = new HashMap<String, Object>();
         request.put( "type", Define.read);
-        request.put( "request_code", data.request_code.intValue());
-        request.put( "client_id", client.id.intValue());
+        request.put( "request_code", data.request_code);
+        request.put( "client_id", client.id);
 
         Socket clientSocket = null;
         try {
@@ -133,7 +133,11 @@ public class ClientHandler implements Runnable {
         String status = (String) messageFromServer.get(Define.status);
         Double request_code = (Double) messageFromServer.get(Define.request_code);
 
-        if (status.equals(Define.success) && request_code.equals(data.request_code)) {
+        if (!request_code.equals(data.request_code)) {
+            if (this.client.verbose > 0)
+                System.out.println("Response atrasada");
+        }
+        else if (status.equals(Define.success) && request_code.equals(data.request_code)) {
             LinkedTreeMap<String, Object> dataDict = (LinkedTreeMap<String, Object>) messageFromServer.get(Define.data);
             ResponseData responseData = new ResponseData(dataDict, data.server);
 
@@ -155,10 +159,6 @@ public class ClientHandler implements Runnable {
             if (this.client.verbose > 0)
                 System.out.println("Ocorreu algum erro na request");
         }
-        else if (!request_code.equals(data.request_code)) {
-            if (this.client.verbose > 0)
-                System.out.println("Response atrasada");
-        }
     }
 
     /*
@@ -169,8 +169,8 @@ public class ClientHandler implements Runnable {
     private void readTimestampFromServer() {
         Map<String, Object> request = new HashMap<String, Object>();
         request.put( "type", Define.read_timestamp);
-        request.put( "request_code", data.request_code.intValue());
-        request.put( "client_id", client.id.intValue());
+        request.put( "request_code", data.request_code);
+        request.put( "client_id", client.id);
 
         Socket clientSocket = null;
         try {

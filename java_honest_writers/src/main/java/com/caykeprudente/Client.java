@@ -16,11 +16,11 @@ public class Client {
     List<Pair<String, Integer>> servers; // contains a tuple of (ip,port)
     int quorum = 2;
 
-    Double id = -1d; // id do client. serve para identificar qual chave usar no RSA
+    int id = -1; // id do client. serve para identificar qual chave usar no RSA
 
     Lock lock = new ReentrantLock();
 
-    private Double request_code = 0d;
+    private int request_code = 0;
 
     List<ResponseData> responses;
     List<Pair<String, Integer>> out_dated_servers;
@@ -41,7 +41,7 @@ public class Client {
     param: verbose - Verbose level: 0 - no print, 1 - print important, 2 - print all
     param: cert_path - Path to certificates
     */
-    public Client(Double id, List<Pair<String, Integer>> servers, int verbose, String cert_path) {
+    public Client(int id, List<Pair<String, Integer>> servers, int verbose, String cert_path) {
         this.id = id;
         this.servers = servers;
         this.verbose = verbose;
@@ -105,10 +105,10 @@ public class Client {
     param: value - Value to be written in servers (dictionary from RepresentedData class)
     */
     private void write(String value) {
-        Double timestamp = readTimestamp();
+        int timestamp = readTimestamp();
         timestamp = incrementTimestamp(timestamp);
 
-        String dataSignature = MySignature.signData(MySignature.getPrivateKey(-1d, id, this.cert_path), value+timestamp.intValue());
+        String dataSignature = MySignature.signData(MySignature.getPrivateKey(-1, id, this.cert_path), value+timestamp);
 
         for (Pair<String, Integer> server : servers) {
             ResponseData data = new ResponseData(value, timestamp, dataSignature, id, request_code, server);
@@ -125,7 +125,7 @@ public class Client {
     Read Timestamps from servers
     return: (int) Timestamp value; -1 if cant get timestamp.
     */
-    private Double readTimestamp() {
+    private int readTimestamp() {
         lock.lock();
         responses = new ArrayList<ResponseData>();
         out_dated_servers = new ArrayList<Pair<String, Integer>>();
@@ -135,7 +135,7 @@ public class Client {
             System.out.println("Lendo timestamp dos servidores....");
 
         for (Pair<String, Integer> server : servers) {
-            ResponseData data = new ResponseData(null, 0d, null, id, request_code, server);
+            ResponseData data = new ResponseData(null, 0, null, id, request_code, server);
             ClientHandler handler = new ClientHandler(this, ClientHandler.Function.readTimestamp, data);
             Thread thread = new Thread(handler);
             thread.start();
@@ -150,7 +150,7 @@ public class Client {
                 lock.unlock();
 
                 if (responses.size() >= quorum) {
-                    Double timestamp = analyseTimestampResponse(responses);
+                    int timestamp = analyseTimestampResponse(responses);
 
                     if(this.verbose > 0)
                         System.out.println("Li o timestamp do server: " + timestamp);
@@ -161,17 +161,17 @@ public class Client {
                     if(this.verbose > 0)
                         System.out.println("ERRO NAO ESPERADO!!!!!. Nao foi possivel ler nenhum dado. O semaforo liberou mas nao teve quorum.");
 
-                    return -1d;
+                    return -1;
                 }
             }
             else {
                 if(this.verbose > 0)
                     System.out.println("Nao foi possivel ler nenhum dado. Timeout da conexao expirado");
-                return -1d;
+                return -1;
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
-            return -1d;
+            return -1;
         }
     }
 
@@ -189,7 +189,7 @@ public class Client {
             System.out.println("Lendo dados dos servidores....");
 
         for (Pair<String, Integer> server : servers) {
-            ResponseData data = new ResponseData(null, 0d, null, id, request_code, server);
+            ResponseData data = new ResponseData(null, 0, null, id, request_code, server);
             ClientHandler handler = new ClientHandler(this, ClientHandler.Function.read, data);
             Thread thread = new Thread(handler);
             thread.start();
@@ -263,7 +263,7 @@ public class Client {
     param: serverTimestamp - Highest timestamp from a quorum of servers
     return: (int) Incremented timestamp
     */
-    private Double incrementTimestamp(Double timestamp) {
+    private int incrementTimestamp(int timestamp) {
         return timestamp+1;
     }
 
@@ -275,11 +275,11 @@ public class Client {
     */
     private ResponseData analyseResponse(List<ResponseData> responses) {
         String value = "";
-        Double timestamp = -1d;
+        int timestamp = -1;
         int repeatTimes = 0;
         ArrayList<Pair> auxServers = new ArrayList<Pair>();
         String data_signature = "";
-        Double client_id = -1d;
+        int client_id = -1;
 
         for (ResponseData response : responses) {
             if (response.timestamp == -1 || response.client_id == -1) {
@@ -287,8 +287,8 @@ public class Client {
                 out_dated_servers.add(response.server);
             }
             else {
-                if (MySignature.verifySign(MySignature.getPublicKey(-1d, response.client_id, this.cert_path), response.data_signature, response.value+response.timestamp.intValue())) {
-                    if (response.timestamp.equals(timestamp)) {
+                if (MySignature.verifySign(MySignature.getPublicKey(-1, response.client_id, this.cert_path), response.data_signature, response.value+response.timestamp)) {
+                    if (response.timestamp == timestamp) {
                         repeatTimes = repeatTimes + 1;
                         auxServers.add(response.server);
                     }
@@ -310,7 +310,7 @@ public class Client {
             }
         }
 
-        return new ResponseData(value, timestamp, data_signature, client_id, 0d, null);
+        return new ResponseData(value, timestamp, data_signature, client_id, 0, null);
     }
 
 
@@ -319,12 +319,12 @@ public class Client {
     param: responses - Servers' responses
     return: (int) Highest timestamp founded
     */
-    private Double analyseTimestampResponse(List<ResponseData> responses) {
-        Double timestamp = -1d;
+    private int analyseTimestampResponse(List<ResponseData> responses) {
+        int timestamp = -1;
         int repeatTimes = 0;
 
         for (ResponseData response : responses) {
-            if (response.timestamp.equals(timestamp))
+            if (response.timestamp == timestamp)
                 repeatTimes++;
             else if (response.timestamp > timestamp) {
                 timestamp = response.timestamp;

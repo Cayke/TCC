@@ -20,14 +20,14 @@ public class ResponseData {
     */
 
     String value;
-    Double timestamp;
+    int timestamp;
     String data_signature;
-    Double client_id;
+    int client_id;
     Pair<String, Integer> server;
 
-    Double request_code;
+    int request_code;
 
-    public ResponseData(String value, Double timestamp, String data_signature, Double client_id, Double request_code, Pair<String, Integer> server) {
+    public ResponseData(String value, int timestamp, String data_signature, int client_id, int request_code, Pair<String, Integer> server) {
         this.value = value;
         this.timestamp = timestamp;
         this.data_signature = data_signature;
@@ -37,10 +37,10 @@ public class ResponseData {
     };
 
     public ResponseData(LinkedTreeMap<String, Object> dictionary, Pair<String, Integer> server) {
-        timestamp = (Double) dictionary.get(Define.timestamp);
+        timestamp = ((Double) dictionary.get(Define.timestamp)).intValue();
         value = (String) dictionary.get(Define.variable);
         data_signature = (String) dictionary.get(Define.data_signature);
-        client_id = (Double) dictionary.get(Define.client_id);
+        client_id = ((Double) dictionary.get(Define.client_id)).intValue();
         this.server = server;
     }
 }
