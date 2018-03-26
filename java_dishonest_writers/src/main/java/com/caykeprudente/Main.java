@@ -7,13 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
-    private static boolean DEBUG = true;
+    private static boolean DEBUG = false;
     public static int VERBOSE;
 
     public static void main(String[] args) {
         // write your code here
-        runClient(args);
-        //runServer(args);
+        //runClient(args);
+        runServer(args);
     }
 
     private static void runServer(String[] args) {

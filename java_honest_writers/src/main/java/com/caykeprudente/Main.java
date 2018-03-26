@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
-    private static boolean DEBUG = true;
+    private static boolean DEBUG = false;
     public static int VERBOSE;
 
     public static void main(String[] args) {
