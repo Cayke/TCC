@@ -9,7 +9,7 @@
 #include <iostream>
 #include "server.hpp"
 
-bool debug = true;
+bool debug = false;
 
 int main(int argc, const char * argv[]) {
     if (debug) {

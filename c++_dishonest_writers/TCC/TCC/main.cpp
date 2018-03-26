@@ -11,7 +11,7 @@
 #include <string>
 #include "signature.hpp"
 
-bool debug = true;
+bool debug = false;
 
 int main(int argc, const char * argv[]) {
     if (debug) {

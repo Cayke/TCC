@@ -8,7 +8,7 @@
 
 import Foundation
 
-let debug = true
+let debug = false
 
 if debug {
     let id = 1
