@@ -1,7 +1,7 @@
 from server import Server
 import sys
 
-DEBUG = True
+DEBUG = False
 
 if DEBUG:
     id = 2

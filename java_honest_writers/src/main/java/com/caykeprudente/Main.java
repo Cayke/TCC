@@ -54,10 +54,10 @@ public class Main {
     private static void runClient(String[] args) {
         if (DEBUG) {
             List<Pair<String, Integer>> servers = new ArrayList<Pair<String, Integer>>();
-            servers.add(new Pair<String, Integer>("localhost", 5000));
-            servers.add(new Pair<String, Integer>("localhost", 5001));
-            servers.add(new Pair<String, Integer>("localhost", 5002));
-            servers.add(new Pair<String, Integer>("localhost", 5003));
+            servers.add(new Pair<String, Integer>("node0.caykequoruns.freestore.emulab.net", 5000));
+            servers.add(new Pair<String, Integer>("node1.caykequoruns.freestore.emulab.net", 5001));
+            servers.add(new Pair<String, Integer>("node2.caykequoruns.freestore.emulab.net", 5002));
+            servers.add(new Pair<String, Integer>("node3.caykequoruns.freestore.emulab.net", 5003));
             try {
                 VERBOSE = 2;
                 new RobotClient(0, servers, 2, "/OneDrive/unb/TCC/git/certs/", 100, "write", "/OneDrive/unb/TCC/git/results/");
@@ -74,20 +74,27 @@ public class Main {
                 System.out.println(args.toString());
             }
 
-            int id = Double.valueOf(args[0]).intValue();
+            int id = Integer.parseInt(args[0]);
             int verbose = Integer.parseInt(args[1]);
             VERBOSE = verbose;
             String cert_path = args[2];
+            int repeatOperation = Integer.parseInt(args[3]);
+            String operation = args[4];
+            String resultsPath = args[5];
 
             List<Pair<String, Integer>> servers = new ArrayList<Pair<String, Integer>>();
-            int i = 3;
+            int i = 6;
             while (i < args.length) {
                 servers.add(new Pair<String, Integer>(args[i], Integer.parseInt(args[i+1])));
                 i = i+2;
             }
 
+            if (VERBOSE == 2) {
+                System.out.println(args.toString());
+            }
+
             try {
-                new Client(id, servers, verbose, cert_path);
+                new RobotClient(id, servers, verbose, cert_path, repeatOperation, operation, resultsPath);
             } catch (Exception e) {
                 System.out.println("Deu ruim no client: " + e.toString());
             }
