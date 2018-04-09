@@ -375,11 +375,11 @@ namespace server{
             std::pair<int, std::pair<int, std::string>> tuple = *iterator;
             if (tuple.first == client_id) {
                 std::pair<int, std::string> echoe = tuple.second;
-                if (echoe.first == TIMESTAMP && echoe.second != value) {
+                if (echoe.first == timestamp && echoe.second != value) {
                     LOCK.unlock();
                     return false;
                 }
-                else if (echoe.first == TIMESTAMP && echoe.second == value){
+                else if (echoe.first == timestamp && echoe.second == value){
                     LOCK.unlock();
                     return true;
                 }
