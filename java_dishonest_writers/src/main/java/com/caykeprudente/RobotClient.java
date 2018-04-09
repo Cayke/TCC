@@ -7,44 +7,45 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class RobotClient {
-    List<Pair<String, Integer>> servers; // contains a tuple of (ip,port)
+    private List<Pair<String, Integer>> servers; // contains a tuple of (ip,port)
 
-    int faults = 1; //number of faults system can handle
+    private  int faults = 1; //number of faults system can handle
     int quorum = 2*faults + 1;
 
     int id = -1;
 
     Lock lock = new ReentrantLock();
 
-    private int request_code = 0;
+    public int request_code = 0;
 
     List<ResponseData> responses;
     List<Pair<Integer, String>> echoes; //armazena as assinaturas dos servidores (server_id, data_signature)
-    List<Pair<String, Integer>> out_dated_servers;
+    private List<Pair<String, Integer>> out_dated_servers;
 
     int increment_timestamp_by = 1;
 
     boolean timestamp_already_echoed_by_any_server = false;
-    int timestamp_already_echoed_power = 0;
+    private int timestamp_already_echoed_power = 0;
 
     Semaphore semaphore = new Semaphore(0);
 
     public int verbose = 0;
-    public String cert_path = "";
-    public String results_path = "";
+    private String cert_path = "";
+    private String results_path = "";
 
-    boolean exit = false;
+    private boolean exit = false;
 
-    public int number_of_executions = 0;
-    public List<Double> operation_timers = new ArrayList<Double>();
-    public long init_time = 0;
-    public long final_time = 0;
+    private int number_of_executions = 0;
+    private List<Double> operation_timers = new ArrayList<Double>();
+    private long init_time = 0;
+    private long final_time = 0;
 
 
 
@@ -84,6 +85,7 @@ public class RobotClient {
         int i = 0;
         if (type.equals("read")) {
             while (i < n) {
+                System.out.println("MARK");
                 long init_time = System.currentTimeMillis();
                 this.read();
                 long final_time = System.currentTimeMillis();
@@ -96,6 +98,7 @@ public class RobotClient {
         }
         else if (type.equals("write")) {
             while (i < n) {
+                System.out.println("MARK");
                 long init_time = System.currentTimeMillis();
                 String data = RepresentedData.getFakeData(200);
                 this.write(data);
@@ -194,9 +197,12 @@ public class RobotClient {
     private void write(String value) {
         int timestamp = readTimestamp();
         timestamp = incrementTimestamp(timestamp);
-        List<Pair<Integer, String>> echoes = getEchoes(value, timestamp);
+        Pair<List<Pair<Integer, String>>, Integer> pair = getEchoes(value, timestamp);
 
-        if (echoes != null) {
+        if (pair != null) {
+            List<Pair<Integer, String>> echoes = pair.fst;
+            timestamp = pair.snd;
+
             for (Pair<String, Integer> server : servers) {
                 ResponseData data = new ResponseData(value, timestamp, null, -1, request_code, server, echoes);
                 ClientHandler handler = new ClientHandler(this, ClientHandler.Function.write, data);
@@ -204,7 +210,12 @@ public class RobotClient {
                 thread.start();
             }
 
+            lock.lock();
             request_code++;
+            lock.unlock();
+
+            if (this.verbose > 0)
+                System.out.println("WRITE_RESULT: Provavelmente escreveu o valor nos servers!!!");
         }
         else {
             lock.lock();
@@ -212,7 +223,7 @@ public class RobotClient {
             lock.unlock();
 
             if (this.verbose > 0)
-                System.out.println("Nao foi possivel fazer a escrita");
+                System.out.println("Nao foi possivel fazer a escrita, nao obteve echos suficientes.");
         }
     }
 
@@ -240,11 +251,11 @@ public class RobotClient {
         try {
             boolean wasReleased = semaphore.tryAcquire(Define.timeout, TimeUnit.SECONDS);
 
-            if (wasReleased) {
-                lock.lock();
-                request_code++;
-                lock.unlock();
+            lock.lock();
+            request_code++;
+            lock.unlock();
 
+            if (wasReleased) {
                 if (responses.size() >= quorum) {
                     int timestamp = analyseTimestampResponse(responses);
 
@@ -267,6 +278,10 @@ public class RobotClient {
                 return -1;
             }
         } catch (InterruptedException e) {
+            lock.lock();
+            request_code++;
+            lock.unlock();
+
             e.printStackTrace();
             return -1;
         }
@@ -296,11 +311,11 @@ public class RobotClient {
         try {
             boolean wasReleased = semaphore.tryAcquire(Define.timeout, TimeUnit.SECONDS);
 
-            if (wasReleased) {
-                lock.lock();
-                request_code++;
-                lock.unlock();
+            lock.lock();
+            request_code++;
+            lock.unlock();
 
+            if (wasReleased) {
                 if (responses.size() >= quorum) {
                     ResponseValidator mostRecentData = analyseResponse(responses);
 
@@ -317,8 +332,6 @@ public class RobotClient {
                         if (this.verbose > 0)
                             System.out.println("Nao foi possivel ler nenhum dado. Chegou o quorum de mensagens mas nao havia b+1 iguais.");
                     }
-
-
                 }
                 else {
                     if (this.verbose > 0)
@@ -330,6 +343,10 @@ public class RobotClient {
                     System.out.println("Nao foi possivel ler nenhum dado. Timeout da conexao expirado");
             }
         } catch (InterruptedException e) {
+            lock.lock();
+            request_code++;
+            lock.unlock();
+
             e.printStackTrace();
         }
     }
@@ -351,7 +368,9 @@ public class RobotClient {
                 thread.start();
             }
         }
+        lock.lock();
         request_code++;
+        lock.unlock();
     }
 
 
@@ -361,7 +380,7 @@ public class RobotClient {
     param: timestamp - Timestamp from value
     return: (List) Valid echoes from server; Null if cant get.
      */
-    private List<Pair<Integer, String>> getEchoes(String value, int timestamp) {
+    private Pair<List<Pair<Integer, String>>, Integer> getEchoes(String value, int timestamp) {
         lock.lock();
         echoes = new ArrayList<Pair<Integer, String>>();
         timestamp_already_echoed_by_any_server = false;
@@ -380,10 +399,11 @@ public class RobotClient {
         try {
             boolean wasReleased = semaphore.tryAcquire(Define.timeout, TimeUnit.SECONDS);
 
+            lock.lock();
+            request_code++;
+            lock.unlock();
+
             if (wasReleased) {
-                lock.lock();
-                request_code++;
-                lock.unlock();
 
                 if (timestamp_already_echoed_by_any_server) {
                     double dincrement = Math.pow(2, timestamp_already_echoed_power);
@@ -400,11 +420,11 @@ public class RobotClient {
                         if (this.verbose > 0)
                             System.out.println("Li os echos com sucesso");
 
-                        return validEchoes;
+                        return new Pair<List<Pair<Integer, String>>, Integer>(validEchoes, timestamp);
                     }
                     else {
                         if (this.verbose > 0)
-                            System.out.println("Li os echos, mas nao deu quorum. Algum echo veio errado.");
+                            System.out.println("ERRO NAO ESPERADO!!!!!. Li os echos, mas nao deu quorum. Algum echo veio errado.");
 
                         return null;
                     }
@@ -425,6 +445,10 @@ public class RobotClient {
                 return null;
             }
         } catch (InterruptedException e) {
+            lock.lock();
+            request_code++;
+            lock.unlock();
+
             e.printStackTrace();
 
             return null;

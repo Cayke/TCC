@@ -1,18 +1,13 @@
 package com.caykeprudente;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.internal.LinkedTreeMap;
 import com.sun.tools.javac.util.Pair;
-
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.SocketHandler;
 
 /**
  * Created by cayke on 19/03/17.
@@ -82,7 +77,7 @@ public class ClientHandler implements Runnable {
         request.put( "echoes", echoesArray);
         injectClientInfo(request);
 
-        Socket clientSocket = null;
+        Socket clientSocket;
         try {
             clientSocket = new Socket(data.server.fst, data.server.snd);
             Connection.sendMessage(request, clientSocket);
@@ -91,6 +86,7 @@ public class ClientHandler implements Runnable {
 
             if (this.client.verbose > 0)
                 System.out.println("Error updating");
+            return;
         }
 
         LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
@@ -137,7 +133,7 @@ public class ClientHandler implements Runnable {
         request.put( "request_code", data.request_code);
         injectClientInfo(request);
 
-        Socket clientSocket = null;
+        Socket clientSocket;
         try {
             clientSocket = new Socket(data.server.fst, data.server.snd);
             Connection.sendMessage(request, clientSocket);
@@ -146,7 +142,7 @@ public class ClientHandler implements Runnable {
 
             if (this.client.verbose > 0)
                 System.out.println("Error reading value from server");
-            
+            return;
         }
 
         LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
@@ -159,7 +155,7 @@ public class ClientHandler implements Runnable {
         String status = (String) messageFromServer.get(Define.status);
         int request_code = ((Double) messageFromServer.get(Define.request_code)).intValue();
 
-        if (request_code != data.request_code) {
+        if (request_code != client.request_code) {
             if (this.client.verbose > 0)
                 System.out.println("Response atrasada");
         }
@@ -199,7 +195,7 @@ public class ClientHandler implements Runnable {
         request.put( "request_code", data.request_code);
         injectClientInfo(request);
 
-        Socket clientSocket = null;
+        Socket clientSocket;
         try {
             clientSocket = new Socket(data.server.fst, data.server.snd);
             Connection.sendMessage(request, clientSocket);
@@ -208,7 +204,7 @@ public class ClientHandler implements Runnable {
 
             if (this.client.verbose > 0)
                 System.out.println("Error reading value from server");
-            
+            return;
         }
 
         LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
@@ -221,7 +217,7 @@ public class ClientHandler implements Runnable {
         String status = (String) messageFromServer.get(Define.status);
         int request_code = ((Double) messageFromServer.get(Define.request_code)).intValue();
 
-        if (request_code != data.request_code) {
+        if (request_code != client.request_code) {
             if (this.client.verbose > 0)
                 System.out.println("Response atrasada");
         }
@@ -264,7 +260,7 @@ public class ClientHandler implements Runnable {
         request.put( "timestamp", data.timestamp);
         injectClientInfo(request);
 
-        Socket clientSocket = null;
+        Socket clientSocket;
         try {
             clientSocket = new Socket(data.server.fst, data.server.snd);
             Connection.sendMessage(request, clientSocket);
@@ -273,7 +269,7 @@ public class ClientHandler implements Runnable {
 
             if (this.client.verbose > 0)
                 System.out.println("Error reading value from server");
-            
+            return;
         }
 
         LinkedTreeMap<String, Object> messageFromServer = (LinkedTreeMap<String, Object>) Connection.read(clientSocket);
@@ -287,7 +283,7 @@ public class ClientHandler implements Runnable {
         int request_code = ((Double) messageFromServer.get(Define.request_code)).intValue();
         String msg = (String) messageFromServer.get(Define.msg);
 
-        if (request_code!=data.request_code) {
+        if (request_code!= client.request_code) {
             if (this.client.verbose > 0)
                 System.out.println("Response atrasada");
         }
