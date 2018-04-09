@@ -3,7 +3,7 @@ import os
 
 import Define
 
-DEBUG = True
+DEBUG = False
 
 
 def getInfoFromClients(path):
