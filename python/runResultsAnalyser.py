@@ -27,7 +27,7 @@ def getInfoFromClients(path):
             init_time = min(init_time, float(data[2]))
             final_time = max(final_time, float(data[3]))
 
-    results_file = open(path + 'results.txt', 'w')
+    results_file = open(path + 'results' + str(clients) + '.txt', 'w')
     # 'number_of_executions_per_client;clients;latency;throughput\n'
     results_file.write(Define.results_file_header)
     results_file.write(str(operations/clients) + '|' + str(clients) + '|' + str(average_sum/clients).replace('.', ',') + '|' + str(operations / (final_time - init_time)).replace('.', ','))
