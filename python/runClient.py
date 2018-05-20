@@ -2,7 +2,7 @@ from robotClient import RobotClient
 from client import Client
 import sys
 
-DEBUG = True
+DEBUG = False
 
 if DEBUG:
     servers = [('localhost', 5000), ('localhost', 5001), ('localhost', 5002), ('localhost', 5003)]

@@ -186,7 +186,7 @@ public class RobotClient {
         int timestamp = readTimestamp();
         timestamp = incrementTimestamp(timestamp);
 
-        String dataSignature = MySignature.signData(MySignature.getPrivateKey(-1, id, this.cert_path), value+timestamp);
+        String dataSignature = MySignature.signData(MySignature.getPrivateKey(-1, id % 2, this.cert_path), value+timestamp);
 
         for (Pair<String, Integer> server : servers) {
             ResponseData data = new ResponseData(value, timestamp, dataSignature, id, request_code, server);
@@ -365,7 +365,7 @@ public class RobotClient {
                 out_dated_servers.add(response.server);
             }
             else {
-                if (MySignature.verifySign(MySignature.getPublicKey(-1, response.client_id, this.cert_path), response.data_signature, response.value+response.timestamp)) {
+                if (MySignature.verifySign(MySignature.getPublicKey(-1, response.client_id % 2, this.cert_path), response.data_signature, response.value+response.timestamp)) {
                     if (response.timestamp == timestamp) {
                         repeatTimes = repeatTimes + 1;
                         auxServers.add(response.server);

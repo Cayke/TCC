@@ -96,8 +96,8 @@ class RobotClient ():
         file = open(path, 'w')
 
         file.write(Define.execution_file_header)
-        infos = str(self.NUMBER_OF_EXECUTIONS) + ';' + str(self.getAverageOperationTime()) + ';' \
-                + str(self.INIT_TIME) + ';' + str(self.FINAL_TIME)
+        infos = str(self.NUMBER_OF_EXECUTIONS) + '|' + str(self.getAverageOperationTime()) + '|' \
+                + str(self.INIT_TIME) + '|' + str(self.FINAL_TIME)
         file.write(infos)
         file.close()
 
