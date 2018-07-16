@@ -268,7 +268,7 @@ class Client ():
     param: timestamp - Timestamp from value
     param: data_signature - Signature from value+timestamp
     '''
-    def writeBack(self, value, timestamp, echoes,):
+    def writeBack(self, value, timestamp, echoes):
         for server in self.OUT_DATED_SERVERS:
             if timestamp != -1:
                 threading.Thread(target=self.writeOnServer, args=(server, value, timestamp, echoes, self.REQUEST_CODE, Define.write_back)).start()

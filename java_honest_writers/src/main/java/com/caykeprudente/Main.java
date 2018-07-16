@@ -5,9 +5,10 @@ import com.sun.tools.javac.util.Pair;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Main {
-    private static boolean DEBUG = false;
+    private static boolean DEBUG = true;
     public static int VERBOSE;
 
     public static void main(String[] args) {
@@ -60,7 +61,7 @@ public class Main {
             servers.add(new Pair<String, Integer>("node3.caykequoruns.freestore.emulab.net", 5003));
             try {
                 VERBOSE = 2;
-                new RobotClient(0, servers, 2, "/OneDrive/unb/TCC/git/certs/", 100, "write", "/OneDrive/unb/TCC/git/results/");
+                new RobotClient(0, servers, 2, "/OneDrive/unb/TCC/git/certs/", 1, "read", "/OneDrive/unb/TCC/git/results/");
             } catch (Exception e) {
                 System.out.println("Deu ruim no client: " + e.toString());
             }
